@@ -1,6 +1,6 @@
 #include <minunit.h>
 #include <stdio.h>
-#include <board.h>
+#include <minesweeper.h>
 
 int tests_run = 0;
 struct board board;

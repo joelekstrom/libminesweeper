@@ -1,23 +1,19 @@
 C_FLAGS = -std=c99 -Wall
 
-executable = bin/terminal-mines
-library = bin/libminesweeper.a
+library = libminesweeper.a
 
-$(executable): $(library) frontends/ncurses/*.c
-	$(CC) $(C_FLAGS) frontends/ncurses/*.c -Ilib -Ifrontends/ncurses -Lbin -o $@ -lncurses -lminesweeper
+$(library): lib/minesweeper.c
+	$(CC) $(C_FLAGS) -c lib/minesweeper.c -Ilib
+	ar rcs $@ minesweeper.o
+	rm *.o
 
-$(library): lib/board.c
-	mkdir -p bin
-	$(CC) $(C_FLAGS) -c lib/board.c -o bin/board.o
-	ar rcs $@ bin/board.o
-	rm bin/board.o
+.PHONY: test, clean, clean-tests
+test: tests/test
+	tests/test
 
-.PHONY: test, clean
-test: bin/test
-	bin/test
-
-bin/test: $(library)
-	$(CC) $(C_FLAGS) tests/board_tests.c -Ilib -Itests -Lbin -lminesweeper -o $@
+tests/test: $(library)
+	$(CC) $(C_FLAGS) tests/minesweeper_tests.c -Ilib -Itests -L. -lminesweeper -o $@
 
 clean:
-	rm -rf bin/
+	-rm libminesweeper.a
+	-rm tests/test
