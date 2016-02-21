@@ -3,12 +3,12 @@
 #include <minesweeper.h>
 
 int tests_run = 0;
+int width = 120;
+int height = 100;
 struct board board;
 
 static char * test_init() {
 	board.data = NULL;
-	int width = 120;
-	int height = 100;
 	board_init(&board, width, height, 0.1);
     mu_assert("Error: init must allocate board data.", board.data != NULL);
 	mu_assert("Error: mines must not be placed until the first tile is opened.", board.mines_placed == false);
@@ -78,14 +78,49 @@ static char * test_open_mine() {
 	return 0;
 }
 
+extern void place_mine(struct board *board, uint8_t *tile);
 
+static char * test_adjacent_mine_counts() {
+	board_deinit(&board);
+	board_init(&board, width, height, 0.1);
+
+	place_mine(&board, get_tile_at(&board, 10, 10));
+	place_mine(&board, get_tile_at(&board, 10, 11));
+
+	uint8_t *t = get_tile_at(&board, 9, 10);
+	uint8_t mine_count = adjacent_mine_count(t);
+	mu_assert("Error: the tile at (9, 10) must have a mine_count of 2 after mines have been placed at (10, 10) and (10, 11).", mine_count == 2);
+
+	uint8_t *adj_tiles[8];
+	get_adjacent_tiles(&board, t, adj_tiles);
+	for (int i = 0; i < 8; i++) {
+		place_mine(&board, adj_tiles[i]);
+	}
+
+	mine_count = adjacent_mine_count(t);
+	mu_assert("Error: the tile at (9, 10) must have a mine_count of 8 after mines have been placed at every tile around it.", mine_count == 8);
+
+	return 0;
+}
 
 static char * all_tests() {
+	puts("Test: Initialization...");
 	mu_run_test(test_init);
+
+	puts("Test: Get tile...");
 	mu_run_test(test_get_tile);
+
+	puts("Test: Get adjacent tiles...");
 	mu_run_test(test_get_adjacent_tiles);
+
+	puts("Test: Open first tile...");
 	mu_run_test(test_open_first_tile);
+
+	puts("Test: Open mine...");
 	mu_run_test(test_open_mine);
+
+	puts("Test: Adjacent mine counters...");
+	mu_run_test(test_adjacent_mine_counts);
 	return 0;
 }
  

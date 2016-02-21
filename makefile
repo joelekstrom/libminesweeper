@@ -11,7 +11,7 @@ $(library): lib/minesweeper.c
 test: tests/test
 	tests/test
 
-tests/test: $(library)
+tests/test: $(library) tests/*c
 	$(CC) $(C_FLAGS) tests/minesweeper_tests.c -Iinclude -Itests -L. -lminesweeper -o $@
 
 clean:
