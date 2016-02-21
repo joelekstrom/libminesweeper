@@ -17,8 +17,9 @@ static char * test_init() {
 }
 
 static int count_adjacent_tiles(uint8_t **adjacent_tiles) {
-	int count =  0;
-	for (int i = 0; i < 8; i++) {
+	int i;
+	int count = 0;
+	for (i = 0; i < 8; i++) {
 		if (adjacent_tiles[i]) {
 			count++;
 		}
@@ -62,9 +63,12 @@ static char * test_open_first_tile() {
 }
 
 static char * test_open_mine() {
-	// Let's find a tile with a mine and open it...
-	for (int x = 0; x < board.width; x++) {
-		for (int y = 0; y < board.height; y++) {
+	int x;
+	int y;
+
+	/* Let's find a tile with a mine and open it... */
+	for (x = 0; x < board.width; x++) {
+		for (y = 0; y < board.height; y++) {
 			uint8_t *tile = get_tile_at(&board, x, y);
 			if (*tile & TILE_MINE) {
 				board.cursor_x = x;
@@ -81,19 +85,23 @@ static char * test_open_mine() {
 extern void place_mine(struct board *board, uint8_t *tile);
 
 static char * test_adjacent_mine_counts() {
+	uint8_t *t;
+	uint8_t *adj_tiles[8];
+	uint8_t mine_count;
+	int i;
+
 	board_deinit(&board);
 	board_init(&board, width, height, 0.1);
 
 	place_mine(&board, get_tile_at(&board, 10, 10));
 	place_mine(&board, get_tile_at(&board, 10, 11));
 
-	uint8_t *t = get_tile_at(&board, 9, 10);
-	uint8_t mine_count = adjacent_mine_count(t);
+	t = get_tile_at(&board, 9, 10);
+	mine_count = adjacent_mine_count(t);
 	mu_assert("Error: the tile at (9, 10) must have a mine_count of 2 after mines have been placed at (10, 10) and (10, 11).", mine_count == 2);
 
-	uint8_t *adj_tiles[8];
 	get_adjacent_tiles(&board, t, adj_tiles);
-	for (int i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		place_mine(&board, adj_tiles[i]);
 	}
 

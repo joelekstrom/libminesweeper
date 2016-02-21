@@ -1,4 +1,4 @@
-C_FLAGS = -std=c99 -Wall
+C_FLAGS = -std=c89 -Wall -pedantic
 
 library = libminesweeper.a
 
