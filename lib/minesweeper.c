@@ -1,8 +1,5 @@
 #include <minesweeper.h>
 
-#define MAX(A, B) A > B ? A : B
-#define MIN(A, B) A < B ? A : B
-
 uint8_t *get_tile_at(struct board *board, int x, int y);
 void open_tile(uint8_t* tile);
 
@@ -157,19 +154,27 @@ void open_tile(uint8_t *tile) {
 	*tile |= TILE_OPENED;
 }
 
+int max(int a, int b) {
+	return a > b ? a : b;
+}
+
+int min(int a, int b) {
+	return a < b ? a : b;
+}
+
 void move_cursor(struct board *board, enum direction direction) {
 	switch (direction) {
 	case LEFT:
-		board->cursor_x = MAX(board->cursor_x - 1, 0);
+		board->cursor_x = max(board->cursor_x - 1, 0);
 		break;
 	case RIGHT:
-		board->cursor_x = MIN(board->cursor_x + 1, board->width - 1);
+		board->cursor_x = min(board->cursor_x + 1, board->width - 1);
 		break;
 	case UP:
-		board->cursor_y = MAX(board->cursor_y - 1, 0);
+		board->cursor_y = max(board->cursor_y - 1, 0);
 		break;
 	case DOWN:
-		board->cursor_y = MIN(board->cursor_y + 1, board->height - 1);
+		board->cursor_y = min(board->cursor_y + 1, board->height - 1);
 		break;
 	}
 }
