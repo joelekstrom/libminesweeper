@@ -1,21 +1,33 @@
 #include <minesweeper.h>
+#include <stdlib.h>
+#include <string.h>
 
 uint8_t *get_tile_at(struct board *board, int x, int y);
 void open_tile(uint8_t* tile);
 
-void board_init(struct board *board, int width, int height, float mine_density) {
-	board->width = width;
-	board->height = height;
+struct board *board_init(int width, int height, float mine_density, uint8_t *buffer) {
+	/* Place a board object in the start of the buffer, and
+	   treat the rest of the buffer as tile storage. */
+	struct board *board = (struct board *)buffer;
+	board->_data = buffer + sizeof(struct board);
+
 	board->cursor_x = width / 2;
 	board->cursor_y = height / 2;
-	board->mine_density = mine_density;
-	board->mines_placed = false;
-	board->game_over = false;
-	board->data = calloc(sizeof(uint8_t), width * height);
+	board->_game_over = false;
+	board->_width = width;
+	board->_height = height;
+	board->_mine_density = mine_density;
+	board->_mines_placed = false;
+	memset(board->_data, 0, width * height);
+	return board;
+}
+
+size_t minimum_buffer_size(int width, int height) {
+	return sizeof(struct board) + width * height;
 }
 
 bool is_out_of_bounds(struct board *b, int x, int y) {
-	return x < 0 || x >= b->width || y < 0 || y >= b->height;
+	return x < 0 || x >= b->_width || y < 0 || y >= b->_height;
 }
 
 /**
@@ -26,13 +38,13 @@ bool is_out_of_bounds(struct board *b, int x, int y) {
 uint8_t* get_tile_at(struct board *board, int x, int y) {
 	if (is_out_of_bounds(board, x, y))
 		return NULL;
-	return &board->data[board->width * y + x];
+	return &board->_data[board->_width * y + x];
 }
 
 void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_tiles) {
-	int tile_index = tile - board->data;
-	int y = tile_index / board->width;
-	int x = tile_index % board->width;
+	int tile_index = tile - board->_data;
+	int y = tile_index / board->_width;
+	int x = tile_index % board->_width;
 	adjacent_tiles[0] = get_tile_at(board, x - 1, y - 1);
 	adjacent_tiles[1] = get_tile_at(board, x - 1, y);
 	adjacent_tiles[2] = get_tile_at(board, x - 1, y + 1);
@@ -77,21 +89,17 @@ void place_mine(struct board *board, uint8_t *tile) {
 }
 
 void generate_mines(struct board *board, uint8_t *safe_tile) {
-	long tile_count = board->width * board->height;
-	long mine_count = tile_count * board->mine_density;
+	long tile_count = board->_width * board->_height;
+	long mine_count = tile_count * board->_mine_density;
 	long i;
 	for (i = 0; i < mine_count; i++) {
 		float r = (float)rand() / (float)RAND_MAX;
 		long random_index = r * (tile_count - 1);
-		uint8_t *random_tile = &board->data[random_index];
+		uint8_t *random_tile = &board->_data[random_index];
 		if (random_tile != safe_tile) {
 			place_mine(board, random_tile);
 		}
 	}
-}
-
-void board_deinit(struct board *board) {
-	free(board->data);
 }
 
 void open_adjacent_tiles(struct board *board, uint8_t *tile) {
@@ -104,7 +112,7 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 		if (adjacent_tile && !(*adjacent_tile & TILE_OPENED) && !(*adjacent_tile & TILE_FLAG)) {
 			open_tile(adjacent_tile);
 			if (*adjacent_tile & TILE_MINE) {
-				board->game_over = true;
+				board->_game_over = true;
 				return;
 			}
 
@@ -118,9 +126,9 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 void open_tile_at_cursor(struct board *board) {
 	uint8_t* tile = get_tile_at(board, board->cursor_x, board->cursor_y);
 
-	if (!board->mines_placed) {
+	if (!board->_mines_placed) {
 		generate_mines(board, tile);
-		board->mines_placed = true;
+		board->_mines_placed = true;
 	}
 
 	/* If this tile is already opened and has a mine count,
@@ -139,7 +147,7 @@ void open_tile_at_cursor(struct board *board) {
 	open_tile(tile);
 
 	if (*tile & TILE_MINE) {
-		board->game_over = true;
+		board->_game_over = true;
 	} else if (adjacent_mine_count(tile) == 0) {
 		open_adjacent_tiles(board, tile);
 	}
@@ -168,13 +176,13 @@ void move_cursor(struct board *board, enum direction direction) {
 		board->cursor_x = max(board->cursor_x - 1, 0);
 		break;
 	case RIGHT:
-		board->cursor_x = min(board->cursor_x + 1, board->width - 1);
+		board->cursor_x = min(board->cursor_x + 1, board->_width - 1);
 		break;
 	case UP:
 		board->cursor_y = max(board->cursor_y - 1, 0);
 		break;
 	case DOWN:
-		board->cursor_y = min(board->cursor_y + 1, board->height - 1);
+		board->cursor_y = min(board->cursor_y + 1, board->_height - 1);
 		break;
 	}
 }

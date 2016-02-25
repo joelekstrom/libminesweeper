@@ -1,9 +1,9 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 enum {
 	TILE_OPENED = 1,
@@ -19,17 +19,37 @@ enum direction {
 };
 
 struct board {
-	int width;
-	int height;
-	float mine_density;
 	int cursor_x;
 	int cursor_y;
-	bool game_over;
-	bool mines_placed;
-	uint8_t *data;
+
+	/* "Private" variables. Do not change from outside library,
+	 * or undefined things will happen */
+	int _width;
+	int _height;
+	float _mine_density;
+	int _mine_count;
+	bool _mines_placed;
+	bool _game_over;
+	uint8_t *_data;
 };
 
-void board_init(struct board* board, int width, int height, float mine_density);
+/**
+ * Create a new game board. Your frontends can use as many boards as it wants,
+ * for example to implement multiplayer.
+ *
+ * Mine density is a value between 0.0 and 1.0. At 1.0, every tile will contain
+ * a mine, and at 0.0, no tiles will contain mines.
+ *
+ * Buffer is the memory location where you want to keep your board data.
+ * The buffer must be at least the size returned from minimum_buffer_size
+ * for the specified height and width values.
+ *
+ * The returned pointer will point to somewhere within buffer, so to remove
+ * a board, you can invalidate the whole buffer.
+ */
+struct board *board_init(int width, int height, float mine_density, uint8_t *buffer);
+size_t minimum_buffer_size(int width, int height);
+
 void board_deinit(struct board* board);
 void move_cursor(struct board* board, enum direction direction);
 void open_tile_at_cursor(struct board* board);

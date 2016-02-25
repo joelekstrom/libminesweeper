@@ -1,4 +1,4 @@
-C_FLAGS = -std=c89 -Wall -pedantic
+C_FLAGS = --std=c99 -Wall -pedantic
 
 library = libminesweeper.a
 
@@ -15,5 +15,4 @@ tests/test: $(library) tests/*c
 	$(CC) $(C_FLAGS) tests/minesweeper_tests.c -Iinclude -Itests -L. -lminesweeper -o $@
 
 clean:
-	-rm libminesweeper.a
-	-rm tests/test
+	rm -f libminesweeper.a tests/test

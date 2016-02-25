@@ -2,7 +2,8 @@
 # libminesweeper 
 A static library for handling Minesweeper game logic, that can run on embedded hardware. 
 Its goals are to be as efficient as possible memory- and processing power wise. It's written
-in C89 and tries to be compatible with obscure compilers.
+in "[SDCC](http://sdcc.sourceforge.net) compatible C99", which pretty much means that it's
+C99 without inline variable declarations.
 
 ## Building
 Clone the repo and run `make` in the folder, and you'll get the binary `libminesweeper.a`. Link the binary and include 
@@ -17,27 +18,33 @@ First, we should include the library headers:
 ```
 
 Let's set up a game board. You can have as many boards as you want if you for example want to implement multiplayer.
-Parameters to `board_init` are a board structure, width, height, and mine density.
-Mine density is a float value between 0 and 1, where if 1, all tiles will contain a mine.
-The game starts to get unplayable around a density of 0.5.
+First, you need to supply the library with a memory location where it can put board data. The minimum required length
+of this buffer can be retrieved from the function `minimum_buffer_size(int width, int height)`.
+
+To initialize a board in this buffer, call `init_board(int width, int height, float mine_density, uint8_t *buffer)`,
+where mine density is a float value between 0 and 1. If 1, all tiles will contain a mine, and if 0, no tiles will
+contain a mine. The game starts to get unplayable around a density of 0.5.
 	
 ```c
+int width = 20;
+int height = 10;
+uint8_t *board_buffer = malloc(minimum_buffer_size(width, height));
+
 srand(time(NULL)); // Let's make the game less predictable
-struct board board;
-board_init(&board, 20, 10, 0.1);
+struct board *board = board_init(width, height, 0.1, board_buffer);
 ```
 
 Next, let's move the cursor around and open a tile. Check out `minesweeper.h` for more stuff you can do.
 ```c
-move_cursor(&board, RIGHT);
-open_tile_at_cursor(&board);
+move_cursor(board, RIGHT);
+open_tile_at_cursor(board);
 ```
 
 To render tiles correctly in your UI, you can check out the reference implementations. But the quick
 answer is that each "tile" is an 8-bit number that contains all info about that tile. To check if a
 tile contains a flag or is opened, you can do:
 ```c
-uint8_t *tile = get_tile_at(&board, board.cursor_x, board.cursor_y);
+uint8_t *tile = get_tile_at(board, board->cursor_x, board->cursor_y);
 bool contains_flag = *tile & TILE_FLAG;
 bool is_opened = *tile & TILE_OPENED;
 ```
