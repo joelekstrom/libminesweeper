@@ -12,10 +12,10 @@ struct board *board = NULL;
 
 static char * test_init() {
 	board_buffer = malloc(minimum_buffer_size(width, height));
-	board = board_init(width, height, 0.1, board_buffer);
+	board = board_init(width, height, 1.0, board_buffer);
     mu_assert("Error: board data must be offset in the buffer.", board->_data - sizeof(struct board) == (uint8_t *)board);
-	mu_assert("Error: mines must not be placed until the first tile is opened.", board->_mines_placed == false);
 	mu_assert("Error: cursor should be centered after init", board->cursor_x == width / 2  && board->cursor_y == height / 2);
+	mu_assert("Error: after init, state must be pending_start", board->_state == BOARD_PENDING_START);
    	return 0;
 }
 
@@ -60,28 +60,16 @@ static char * test_get_adjacent_tiles() {
 
 static char * test_open_first_tile() {
 	open_tile_at_cursor(board);
-	mu_assert("Error: mines must be placed after first tile is opened", board->_mines_placed == true);
-	mu_assert("Error: there must not be a mine under the first opened tile", board->_game_over == false);
+	mu_assert("Error: after opening the first tile, state should be: playing", board->_state == BOARD_PLAYING);
+	mu_assert("Error: there must not be a mine under the first opened tile", !(*get_tile_at(board, board->cursor_x, board->cursor_y) & TILE_MINE));
 	return 0;
 }
 
 static char * test_open_mine() {
-	int x;
-	int y;
-
-	/* Let's find a tile with a mine and open it... */
-	for (x = 0; x < board->_width; x++) {
-		for (y = 0; y < board->_height; y++) {
-			uint8_t *tile = get_tile_at(board, x, y);
-			if (*tile & TILE_MINE) {
-				board->cursor_x = x;
-				board->cursor_y = y;
-				open_tile_at_cursor(board);
-				mu_assert("Error: After opening a mine tile, game_over must be true.", board->_game_over == true);
-				break;
-			}
-		}
-	}
+	board->cursor_x = 0;
+	board->cursor_y = 0;
+	open_tile_at_cursor(board);
+	mu_assert("Error: After opening a mine tile, state must be game_over.", board->_state == BOARD_GAME_OVER);
 	return 0;
 }
 

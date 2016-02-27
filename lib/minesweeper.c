@@ -13,11 +13,11 @@ struct board *board_init(int width, int height, float mine_density, uint8_t *buf
 
 	board->cursor_x = width / 2;
 	board->cursor_y = height / 2;
-	board->_game_over = false;
+	board->_state = BOARD_PENDING_START;
 	board->_width = width;
 	board->_height = height;
 	board->_mine_density = mine_density;
-	board->_mines_placed = false;
+	board->_mine_count = 0;
 	memset(board->_data, 0, width * height);
 	return board;
 }
@@ -72,11 +72,11 @@ void increment_adjacent_mine_count(uint8_t* tile) {
 
 void place_mine(struct board *board, uint8_t *tile) {
 	bool has_mine = *tile & TILE_MINE;
-
 	if (!has_mine) {
 		int i;
 		uint8_t *adjacent_tiles[8];
 		*tile |= TILE_MINE;
+		board->_mine_count++;
 
 		/* Increase the mine counts on all adjacent tiles */
 		get_adjacent_tiles(board, tile, adjacent_tiles);
@@ -110,7 +110,7 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 		if (adjacent_tile && !(*adjacent_tile & TILE_OPENED) && !(*adjacent_tile & TILE_FLAG)) {
 			open_tile(adjacent_tile);
 			if (*adjacent_tile & TILE_MINE) {
-				board->_game_over = true;
+				board->_state = BOARD_GAME_OVER;
 				return;
 			}
 
@@ -121,20 +121,25 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 	}
 }
 
+bool all_tiles_opened(struct board *board) {
+	return board->_opened_tile_count == board->_width * board->_height - board->_mine_count;
+}
+
 void open_tile_at_cursor(struct board *board) {
 	uint8_t* tile = get_tile_at(board, board->cursor_x, board->cursor_y);
 
-	if (!board->_mines_placed) {
+	if (board->_state == BOARD_PENDING_START) {
 		generate_mines(board, tile);
-		board->_mines_placed = true;
+		board->_state = BOARD_PLAYING;
 	}
 
 	/* If this tile is already opened and has a mine count,
 	 * it should open all adjacent tiles instead. This mimics
 	 * the behaviour in the original minesweeper where you can
 	 * right click opened tiles to open adjacent tiles quickly. */
-	if (*tile & TILE_OPENED && adjacent_mine_count(tile) > 0) {
-		open_adjacent_tiles(board, tile);
+	if (*tile & TILE_OPENED) {
+		if (adjacent_mine_count(tile) > 0)
+			open_adjacent_tiles(board, tile);
 		return;
 	}
 
@@ -143,11 +148,17 @@ void open_tile_at_cursor(struct board *board) {
 	}
 
 	open_tile(tile);
+	board->_opened_tile_count += 1;
 
 	if (*tile & TILE_MINE) {
-		board->_game_over = true;
+		board->_state = BOARD_GAME_OVER;
+	} else if (all_tiles_opened(board)) {
+		board->_state = BOARD_WIN;
 	} else if (adjacent_mine_count(tile) == 0) {
 		open_adjacent_tiles(board, tile);
+		if (all_tiles_opened(board)) {
+			board->_state = BOARD_WIN;
+		}
 	}
 }
 

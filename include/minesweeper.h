@@ -18,18 +18,25 @@ enum direction {
 	DOWN
 };
 
+enum board_state {
+	BOARD_PENDING_START,
+	BOARD_PLAYING,
+	BOARD_WIN,
+	BOARD_GAME_OVER
+};
+
 struct board {
 	int cursor_x;
 	int cursor_y;
 
 	/* "Private" variables. Do not change from outside library,
 	 * or undefined things will happen */
+	enum board_state _state;
 	int _width;
 	int _height;
 	float _mine_density;
 	int _mine_count;
-	bool _mines_placed;
-	bool _game_over;
+	int _opened_tile_count;
 	uint8_t *_data;
 };
 
