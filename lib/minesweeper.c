@@ -64,6 +64,26 @@ uint8_t adjacent_mine_count(uint8_t* tile) {
 	return (*tile & 0xF0) >> 4;
 }
 
+/**
+ * When attempting to open a tile that's already opened, the game
+ * can "auto open" adjacent tiles if it's surrounded by the correct
+ * amount of flagged tiles. This function counts the surrounding
+ * flagged tiles.
+ */
+uint8_t count_adjacent_flags(struct board *board, uint8_t *tile) {
+	uint8_t count = 0;
+	uint8_t *adjacent_tiles[8];
+	uint8_t i;
+	get_adjacent_tiles(board, tile, adjacent_tiles);
+	for (i = 0; i < 8; i++) {
+		uint8_t *adj_tile = adjacent_tiles[i];
+		if (adj_tile && !(*adj_tile & TILE_OPENED) && *adj_tile & TILE_FLAG) {
+			count++;
+		}
+	}
+	return count;
+}
+
 void increment_adjacent_mine_count(uint8_t* tile) {
 	uint8_t value = adjacent_mine_count(tile) + 1;
 	uint8_t shifted_value = value << 4;
@@ -124,7 +144,8 @@ void open_tile(struct board *board, uint8_t *tile) {
 		 * it should open all adjacent tiles instead. This mimics
 		 * the behaviour in the original minesweeper where you can
 		 * right click opened tiles to open adjacent tiles quickly. */
-		if (adjacent_mine_count(tile) > 0)
+		uint8_t adj_mine_count = adjacent_mine_count(tile);
+		if (adj_mine_count > 0 && adj_mine_count == count_adjacent_flags(board, tile))
 			goto open_adjacent_tiles;
 		return;
 	}
