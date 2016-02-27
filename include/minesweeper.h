@@ -50,7 +50,6 @@ struct board {
 struct board *board_init(int width, int height, float mine_density, uint8_t *buffer);
 size_t minimum_buffer_size(int width, int height);
 
-void board_deinit(struct board* board);
 void move_cursor(struct board* board, enum direction direction);
 void open_tile_at_cursor(struct board* board);
 void toggle_flag_at_cursor(struct board* board);
