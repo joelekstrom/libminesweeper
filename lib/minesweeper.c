@@ -89,13 +89,11 @@ void place_mine(struct board *board, uint8_t *tile) {
 }
 
 void generate_mines(struct board *board, uint8_t *safe_tile) {
-	long tile_count = board->_width * board->_height;
-	long mine_count = tile_count * board->_mine_density;
-	long i;
+	int tile_count = board->_width * board->_height;
+	int mine_count = tile_count * board->_mine_density;
+	int i;
 	for (i = 0; i < mine_count; i++) {
-		float r = (float)rand() / (float)RAND_MAX;
-		long random_index = r * (tile_count - 1);
-		uint8_t *random_tile = &board->_data[random_index];
+		uint8_t *random_tile = &board->_data[rand() % tile_count];
 		if (random_tile != safe_tile) {
 			place_mine(board, random_tile);
 		}
