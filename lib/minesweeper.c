@@ -3,7 +3,7 @@
 #include <string.h>
 
 uint8_t *get_tile_at(struct board *board, int x, int y);
-void open_tile(uint8_t* tile);
+void open_tile(struct board *board, uint8_t* tile);
 
 struct board *board_init(int width, int height, float mine_density, uint8_t *buffer) {
 	/* Place a board object in the start of the buffer, and
@@ -100,66 +100,17 @@ void generate_mines(struct board *board, uint8_t *safe_tile) {
 	}
 }
 
-void open_adjacent_tiles(struct board *board, uint8_t *tile) {
-	int i;
-	uint8_t *adjacent_tiles[8];
-	get_adjacent_tiles(board, tile, adjacent_tiles);
-
-	for (i = 0; i < 8; i++) {
-		uint8_t *adjacent_tile = adjacent_tiles[i];
-		if (adjacent_tile && !(*adjacent_tile & TILE_OPENED) && !(*adjacent_tile & TILE_FLAG)) {
-			open_tile(adjacent_tile);
-			if (*adjacent_tile & TILE_MINE) {
-				board->_state = BOARD_GAME_OVER;
-				return;
-			}
-
-			if (adjacent_mine_count(adjacent_tile) == 0) {
-				open_adjacent_tiles(board, adjacent_tile);
-			}
-		}
-	}
-}
-
 bool all_tiles_opened(struct board *board) {
 	return board->_opened_tile_count == board->_width * board->_height - board->_mine_count;
 }
 
 void open_tile_at_cursor(struct board *board) {
 	uint8_t* tile = get_tile_at(board, board->cursor_x, board->cursor_y);
-
 	if (board->_state == BOARD_PENDING_START) {
 		generate_mines(board, tile);
 		board->_state = BOARD_PLAYING;
 	}
-
-	/* If this tile is already opened and has a mine count,
-	 * it should open all adjacent tiles instead. This mimics
-	 * the behaviour in the original minesweeper where you can
-	 * right click opened tiles to open adjacent tiles quickly. */
-	if (*tile & TILE_OPENED) {
-		if (adjacent_mine_count(tile) > 0)
-			open_adjacent_tiles(board, tile);
-		return;
-	}
-
-	if (*tile & TILE_FLAG) {
-		return;
-	}
-
-	open_tile(tile);
-	board->_opened_tile_count += 1;
-
-	if (*tile & TILE_MINE) {
-		board->_state = BOARD_GAME_OVER;
-	} else if (all_tiles_opened(board)) {
-		board->_state = BOARD_WIN;
-	} else if (adjacent_mine_count(tile) == 0) {
-		open_adjacent_tiles(board, tile);
-		if (all_tiles_opened(board)) {
-			board->_state = BOARD_WIN;
-		}
-	}
+	open_tile(board, tile);
 }
 
 void toggle_flag_at_cursor(struct board *board) {
@@ -167,8 +118,50 @@ void toggle_flag_at_cursor(struct board *board) {
 	*tile ^= TILE_FLAG;
 }
 
-void open_tile(uint8_t *tile) {
+void open_tile(struct board *board, uint8_t *tile) {
+	if (*tile & TILE_OPENED) {
+		/* If this tile is already opened and has a mine count,
+		 * it should open all adjacent tiles instead. This mimics
+		 * the behaviour in the original minesweeper where you can
+		 * right click opened tiles to open adjacent tiles quickly. */
+		if (adjacent_mine_count(tile) > 0)
+			goto open_adjacent_tiles;
+		return;
+	}
+
+	if (*tile & TILE_FLAG) {
+		return;
+	}
+
 	*tile |= TILE_OPENED;
+	board->_opened_tile_count += 1;
+
+	if (*tile & TILE_MINE) {
+		board->_state = BOARD_GAME_OVER;
+		return;
+	}
+
+	if (all_tiles_opened(board)) {
+		board->_state = BOARD_WIN;
+		return;
+	}
+
+	if (adjacent_mine_count(tile) != 0) {
+		return;
+	}
+
+ open_adjacent_tiles:
+	{
+		int i;
+		uint8_t *adjacent_tiles[8];
+		get_adjacent_tiles(board, tile, adjacent_tiles);
+		for (i = 0; i < 8; i++) {
+			uint8_t *adjacent_tile = adjacent_tiles[i];
+			if (adjacent_tile && !(*adjacent_tile & TILE_OPENED || *adjacent_tile & TILE_FLAG)) {
+				open_tile(board, adjacent_tile);
+			}
+		}
+	}
 }
 
 int max(int a, int b) {
