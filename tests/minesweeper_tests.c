@@ -101,6 +101,15 @@ static char * test_adjacent_mine_counts() {
 	return 0;
 }
 
+static char * test_win_state() {
+	/* Init the board with zero mines */
+	board = board_init(width, height, 0.0, board_buffer);
+	open_tile_at_cursor(board);
+	mu_assert("Error: when 0 mines exist, all tiles should be opened after the first tile is opened", board->_opened_tile_count == width * height);
+	mu_assert("Error: when all tiles are opened, state should be WIN", board->_state == BOARD_WIN);
+	return 0;
+}
+
 static char * all_tests() {
 	puts("Test: Initialization...");
 	mu_run_test(test_init);
@@ -119,6 +128,9 @@ static char * all_tests() {
 
 	puts("Test: Adjacent mine counters...");
 	mu_run_test(test_adjacent_mine_counts);
+
+	puts("Test: 0 mines/Win state");
+	mu_run_test(test_win_state);
 	return 0;
 }
  

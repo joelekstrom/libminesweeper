@@ -3,9 +3,9 @@
 #include <string.h>
 
 uint8_t *get_tile_at(struct board *board, int x, int y);
-void open_tile(struct board *board, uint8_t* tile);
+void open_tile(struct board *board, uint8_t *tile);
 
-struct board *board_init(int width, int height, float mine_density, uint8_t *buffer) {
+struct board *board_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer) {
 	/* Place a board object in the start of the buffer, and
 	   treat the rest of the buffer as tile storage. */
 	struct board *board = (struct board *)buffer;
@@ -18,11 +18,12 @@ struct board *board_init(int width, int height, float mine_density, uint8_t *buf
 	board->_height = height;
 	board->_mine_density = mine_density;
 	board->_mine_count = 0;
+	board->_opened_tile_count = 0;
 	memset(board->_data, 0, width * height);
 	return board;
 }
 
-size_t minimum_buffer_size(int width, int height) {
+size_t minimum_buffer_size(unsigned width, unsigned height) {
 	return sizeof(struct board) + width * height;
 }
 
@@ -35,16 +36,16 @@ bool is_out_of_bounds(struct board *b, int x, int y) {
  * will return NULL if the tile is out of bounds. This
  * is to simplify code that enumerates "adjacent" tiles.
  */
-uint8_t* get_tile_at(struct board *board, int x, int y) {
+uint8_t *get_tile_at(struct board *board, int x, int y) {
 	if (is_out_of_bounds(board, x, y))
 		return NULL;
 	return &board->_data[board->_width * y + x];
 }
 
 void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_tiles) {
-	int tile_index = tile - board->_data;
-	int y = tile_index / board->_width;
-	int x = tile_index % board->_width;
+	unsigned tile_index = tile - board->_data;
+	unsigned y = tile_index / board->_width;
+	unsigned x = tile_index % board->_width;
 	adjacent_tiles[0] = get_tile_at(board, x - 1, y - 1);
 	adjacent_tiles[1] = get_tile_at(board, x - 1, y);
 	adjacent_tiles[2] = get_tile_at(board, x - 1, y + 1);
@@ -60,7 +61,7 @@ void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_t
  * opened, mine, flag etc. the first 4 stores a count of
  * adjacent mines. This function gets that value.
  */
-uint8_t adjacent_mine_count(uint8_t* tile) {
+uint8_t adjacent_mine_count(uint8_t *tile) {
 	return (*tile & 0xF0) >> 4;
 }
 
@@ -84,7 +85,7 @@ uint8_t count_adjacent_flags(struct board *board, uint8_t *tile) {
 	return count;
 }
 
-void increment_adjacent_mine_count(uint8_t* tile) {
+void increment_adjacent_mine_count(uint8_t *tile) {
 	uint8_t value = adjacent_mine_count(tile) + 1;
 	uint8_t shifted_value = value << 4;
 	*tile = shifted_value | (*tile & 0x0F);
@@ -109,8 +110,8 @@ void place_mine(struct board *board, uint8_t *tile) {
 }
 
 void generate_mines(struct board *board, uint8_t *safe_tile) {
-	int tile_count = board->_width * board->_height;
-	int mine_count = tile_count * board->_mine_density;
+	unsigned tile_count = board->_width * board->_height;
+	unsigned mine_count = tile_count * board->_mine_density;
 	int i;
 	for (i = 0; i < mine_count; i++) {
 		uint8_t *random_tile = &board->_data[rand() % tile_count];
@@ -125,7 +126,7 @@ bool all_tiles_opened(struct board *board) {
 }
 
 void open_tile_at_cursor(struct board *board) {
-	uint8_t* tile = get_tile_at(board, board->cursor_x, board->cursor_y);
+	uint8_t *tile = get_tile_at(board, board->cursor_x, board->cursor_y);
 	if (board->_state == BOARD_PENDING_START) {
 		generate_mines(board, tile);
 		board->_state = BOARD_PLAYING;
@@ -178,7 +179,7 @@ void open_tile(struct board *board, uint8_t *tile) {
 		get_adjacent_tiles(board, tile, adjacent_tiles);
 		for (i = 0; i < 8; i++) {
 			uint8_t *adjacent_tile = adjacent_tiles[i];
-			if (adjacent_tile && !(*adjacent_tile & TILE_OPENED || *adjacent_tile & TILE_FLAG)) {
+			if (adjacent_tile && !(*adjacent_tile & TILE_OPENED) && !(*adjacent_tile & TILE_FLAG)) {
 				open_tile(board, adjacent_tile);
 			}
 		}
