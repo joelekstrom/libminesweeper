@@ -94,7 +94,7 @@ void increment_adjacent_mine_count(uint8_t *tile) {
 void place_mine(struct board *board, uint8_t *tile) {
 	bool has_mine = *tile & TILE_MINE;
 	if (!has_mine) {
-		int i;
+		uint8_t i;
 		uint8_t *adjacent_tiles[8];
 		*tile |= TILE_MINE;
 		board->_mine_count++;
@@ -112,17 +112,13 @@ void place_mine(struct board *board, uint8_t *tile) {
 void generate_mines(struct board *board, uint8_t *safe_tile) {
 	unsigned tile_count = board->_width * board->_height;
 	unsigned mine_count = tile_count * board->_mine_density;
-	int i;
+	unsigned i;
 	for (i = 0; i < mine_count; i++) {
 		uint8_t *random_tile = &board->_data[rand() % tile_count];
 		if (random_tile != safe_tile) {
 			place_mine(board, random_tile);
 		}
 	}
-}
-
-bool all_tiles_opened(struct board *board) {
-	return board->_opened_tile_count == board->_width * board->_height - board->_mine_count;
 }
 
 void open_tile_at_cursor(struct board *board) {
@@ -137,6 +133,10 @@ void open_tile_at_cursor(struct board *board) {
 void toggle_flag_at_cursor(struct board *board) {
 	uint8_t *tile = get_tile_at(board, board->cursor_x, board->cursor_y);
 	*tile ^= TILE_FLAG;
+}
+
+static inline bool all_tiles_opened(struct board *board) {
+	return board->_opened_tile_count == board->_width * board->_height - board->_mine_count;
 }
 
 void open_tile(struct board *board, uint8_t *tile) {
@@ -174,7 +174,7 @@ void open_tile(struct board *board, uint8_t *tile) {
 
  open_adjacent_tiles:
 	{
-		int i;
+		uint_least8_t i;
 		uint8_t *adjacent_tiles[8];
 		get_adjacent_tiles(board, tile, adjacent_tiles);
 		for (i = 0; i < 8; i++) {
@@ -186,11 +186,11 @@ void open_tile(struct board *board, uint8_t *tile) {
 	}
 }
 
-int max(int a, int b) {
+static inline int max(int a, int b) {
 	return a > b ? a : b;
 }
 
-int min(int a, int b) {
+static inline int min(int a, int b) {
 	return a < b ? a : b;
 }
 
