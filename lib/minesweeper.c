@@ -4,6 +4,7 @@
 
 uint8_t *get_tile_at(struct board *board, int x, int y);
 void open_tile(struct board *board, uint8_t *tile);
+void open_adjacent_tiles(struct board *board, uint8_t *tile);
 
 struct board *board_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer) {
 	/* Place a board object in the start of the buffer, and
@@ -139,15 +140,15 @@ static inline bool all_tiles_opened(struct board *board) {
 	return board->_opened_tile_count == board->_width * board->_height - board->_mine_count;
 }
 
-void open_tile(struct board *board, uint8_t *tile) {
+void _open_tile(struct board *board, uint8_t *tile, bool cascade) {
 	if (*tile & TILE_OPENED) {
 		/* If this tile is already opened and has a mine count,
 		 * it should open all adjacent tiles instead. This mimics
 		 * the behaviour in the original minesweeper where you can
 		 * right click opened tiles to open adjacent tiles quickly. */
 		uint8_t adj_mine_count = adjacent_mine_count(tile);
-		if (adj_mine_count > 0 && adj_mine_count == count_adjacent_flags(board, tile))
-			goto open_adjacent_tiles;
+		if (adj_mine_count > 0 && adj_mine_count == count_adjacent_flags(board, tile) && cascade)
+			open_adjacent_tiles(board, tile);
 		return;
 	}
 
@@ -172,18 +173,63 @@ void open_tile(struct board *board, uint8_t *tile) {
 		return;
 	}
 
- open_adjacent_tiles:
-	{
-		uint_least8_t i;
-		uint8_t *adjacent_tiles[8];
-		get_adjacent_tiles(board, tile, adjacent_tiles);
-		for (i = 0; i < 8; i++) {
-			uint8_t *adjacent_tile = adjacent_tiles[i];
-			if (adjacent_tile && !(*adjacent_tile & TILE_OPENED) && !(*adjacent_tile & TILE_FLAG)) {
-				open_tile(board, adjacent_tile);
-			}
-		}
+	if (cascade)
+		open_adjacent_tiles(board, tile);
+}
+
+void open_tile(struct board *board, uint8_t *tile) {
+	_open_tile(board, tile, true);
+}
+
+void open_line_segments(struct board* board, unsigned x1, unsigned x2, unsigned y) {
+	unsigned x;
+	uint8_t* tile;
+	for (x = x1; x <= x2 && (tile = get_tile_at(board, x, y)); x++) {
+		if (!(*tile & TILE_OPENED))
+			_open_tile(board, tile, true);
 	}
+}
+
+void open_adjacent_tiles(struct board *board, uint8_t *tile) {
+	unsigned tile_index = tile - board->_data;
+	unsigned ty = tile_index / board->_width;
+	unsigned tx = tile_index % board->_width;
+	unsigned mine_count;
+	unsigned lx, rx;
+	uint8_t* subtile;
+
+	// Search for left boundary
+	for (lx = tx - 1; subtile = get_tile_at(board, lx, ty); lx--) {
+		mine_count = adjacent_mine_count(subtile);
+		if (*subtile & TILE_OPENED && mine_count != 0)
+			break;
+		_open_tile(board, subtile, false);
+		if (mine_count != 0)
+			break;
+	}
+
+	// Re-adjust value if loop broke out because of out-of-bounds
+	if (is_out_of_bounds(board, lx, ty))
+		lx++;
+
+	// Search for right boundary
+	for (rx = tx + 1; subtile = get_tile_at(board, rx, ty); rx++) {
+		mine_count = adjacent_mine_count(subtile);
+		if (*subtile & TILE_OPENED && mine_count != 0)
+			break;
+		_open_tile(board, subtile, false);
+		if (mine_count != 0)
+			break;
+	}
+
+	// Re-adjust value if loop broke out because of out-of-bounds
+	if (is_out_of_bounds(board, rx, ty))
+		rx--;
+
+	// Open line(s) above
+	open_line_segments(board, lx, rx, ty - 1);
+	// Open line(s) below
+	open_line_segments(board,lx, rx, ty + 1);
 }
 
 static inline int max(int a, int b) {
