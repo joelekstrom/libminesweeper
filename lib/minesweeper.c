@@ -199,7 +199,7 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 	uint8_t* subtile;
 
 	// Search for left boundary
-	for (lx = tx - 1; subtile = get_tile_at(board, lx, ty); lx--) {
+	for (lx = tx - 1; (subtile = get_tile_at(board, lx, ty)); lx--) {
 		mine_count = adjacent_mine_count(subtile);
 		if (*subtile & TILE_OPENED && mine_count != 0)
 			break;
@@ -213,7 +213,7 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 		lx++;
 
 	// Search for right boundary
-	for (rx = tx + 1; subtile = get_tile_at(board, rx, ty); rx++) {
+	for (rx = tx + 1; (subtile = get_tile_at(board, rx, ty)); rx++) {
 		mine_count = adjacent_mine_count(subtile);
 		if (*subtile & TILE_OPENED && mine_count != 0)
 			break;
