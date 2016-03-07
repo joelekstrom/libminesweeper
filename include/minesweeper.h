@@ -57,10 +57,24 @@ struct board {
 struct board *board_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer);
 size_t minimum_buffer_size(unsigned width, unsigned height);
 
-void move_cursor(struct board *board, enum direction direction);
+/**
+ * Use the move_cursor function to move the cursor around, one step at a time.
+ * If you for example are implementing a mouse based UI, you can instead set the
+ * cursor position directly in the board struct. If 'wrap' is true, the cursor
+ * will wrap around the board, meaning if that you move it out of bounds, it
+ * will jump to the opposite side. This can make the game more efficient to
+ * play with key movement.
+ *
+ * Note that there's no requirement for your UI to display the cursor, it's
+ * just there to be the basis for the "open_tile_at_cursor"-function.
+ *
+ * If you do want to display a cursor, the library takes care of all movement
+ * and out of bounds-handling for you, so you should use the built-in way.
+ */
+void move_cursor(struct board *board, enum direction direction, bool wrap);
 void open_tile_at_cursor(struct board *board);
 void toggle_flag_at_cursor(struct board *board);
-uint8_t* get_tile_at(struct board *board, int x, int y);
+uint8_t *get_tile_at(struct board *board, int x, int y);
 void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_tiles);
 uint8_t adjacent_mine_count(uint8_t *tile);
 

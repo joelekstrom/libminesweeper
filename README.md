@@ -36,7 +36,7 @@ struct board *board = board_init(width, height, 0.1, board_buffer);
 
 Next, let's move the cursor around and open a tile. Check out `minesweeper.h` for more stuff you can do.
 ```c
-move_cursor(board, RIGHT);
+move_cursor(board, RIGHT, false);
 open_tile_at_cursor(board);
 ```
 

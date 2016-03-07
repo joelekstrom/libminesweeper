@@ -232,27 +232,31 @@ void open_adjacent_tiles(struct board *board, uint8_t *tile) {
 	open_line_segments(board,lx, rx, ty + 1);
 }
 
-static inline int max(int a, int b) {
-	return a > b ? a : b;
-}
-
-static inline int min(int a, int b) {
-	return a < b ? a : b;
-}
-
-void move_cursor(struct board *board, enum direction direction) {
+void move_cursor(struct board *board, enum direction direction, bool wrap) {
 	switch (direction) {
 	case LEFT:
-		board->cursor_x = max(board->cursor_x - 1, 0);
+		if (board->cursor_x != 0)
+			board->cursor_x--;
+		else if (wrap)
+			board->cursor_x = board->_width - 1;
 		break;
 	case RIGHT:
-		board->cursor_x = min(board->cursor_x + 1, board->_width - 1);
+		if (board->cursor_x != board->_width - 1)
+			board->cursor_x++;
+		else if (wrap)
+			board->cursor_x = 0;
 		break;
 	case UP:
-		board->cursor_y = max(board->cursor_y - 1, 0);
+		if (board->cursor_y != 0)
+			board->cursor_y--;
+		else if (wrap)
+			board->cursor_y = board->_height - 1;
 		break;
 	case DOWN:
-		board->cursor_y = min(board->cursor_y + 1, board->_height - 1);
+		if (board->cursor_y != board->_height - 1)
+			board->cursor_y++;
+		else if (wrap)
+			board->cursor_y = 0;
 		break;
 	}
 }
