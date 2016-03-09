@@ -14,6 +14,7 @@ struct board *board_init(unsigned width, unsigned height, float mine_density, ui
 
 	board->cursor_x = width / 2;
 	board->cursor_y = height / 2;
+	board->on_tile_updated = NULL;
 	board->_state = BOARD_PENDING_START;
 	board->_width = width;
 	board->_height = height;
@@ -43,10 +44,14 @@ uint8_t *get_tile_at(struct board *board, int x, int y) {
 	return &board->_data[board->_width * y + x];
 }
 
-void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_tiles) {
+static inline void get_xy(struct board *board, uint8_t *tile, unsigned *x, unsigned *y) {
 	unsigned tile_index = tile - board->_data;
-	unsigned y = tile_index / board->_width;
-	unsigned x = tile_index % board->_width;
+	*y = tile_index / board->_width;
+	*x = tile_index % board->_width;
+}
+
+void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_tiles) {
+	unsigned x, y; get_xy(board, tile, &x, &y);
 	adjacent_tiles[0] = get_tile_at(board, x - 1, y - 1);
 	adjacent_tiles[1] = get_tile_at(board, x - 1, y);
 	adjacent_tiles[2] = get_tile_at(board, x - 1, y + 1);
@@ -131,9 +136,17 @@ void open_tile_at_cursor(struct board *board) {
 	open_tile(board, tile);
 }
 
+void send_update_callback(struct board *board, uint8_t *tile) {
+	if (board->on_tile_updated != NULL) {
+		unsigned x, y; get_xy(board, tile, &x, &y);
+		board->on_tile_updated(board, tile, x, y);
+	}
+}
+
 void toggle_flag_at_cursor(struct board *board) {
 	uint8_t *tile = get_tile_at(board, board->cursor_x, board->cursor_y);
 	*tile ^= TILE_FLAG;
+	send_update_callback(board, tile);
 }
 
 static inline bool all_tiles_opened(struct board *board) {
@@ -158,6 +171,7 @@ void _open_tile(struct board *board, uint8_t *tile, bool cascade) {
 
 	*tile |= TILE_OPENED;
 	board->_opened_tile_count += 1;
+	send_update_callback(board, tile);
 
 	if (*tile & TILE_MINE) {
 		board->_state = BOARD_GAME_OVER;

@@ -25,9 +25,13 @@ enum board_state {
 	BOARD_GAME_OVER
 };
 
+struct board;
+typedef void (*mswp_callback) (struct board *board, uint8_t *tile, int x, int y);
+
 struct board {
 	unsigned cursor_x;
 	unsigned cursor_y;
+	mswp_callback on_tile_updated;
 
 	/* "Private" variables. Do not change from outside library,
 	 * or undefined things will happen */

@@ -110,6 +110,24 @@ static char * test_win_state() {
 	return 0;
 }
 
+static unsigned callback_count = 0;
+void callback(struct board *board, uint8_t *tile, int x, int y) {
+	callback_count++;
+}
+
+static char * test_callbacks() {
+	board = board_init(width, height, 0.0, board_buffer);
+	toggle_flag_at_cursor(board);
+	mu_assert("Error: if no callback function is assigned, no callbacks should fire.", callback_count == 0);
+	board->on_tile_updated = &callback;
+	toggle_flag_at_cursor(board);
+	mu_assert("Error: if a callback function is assigned, a callback should fire when a flag is toggled.", callback_count == 1);
+	callback_count = 0;
+	open_tile_at_cursor(board);
+	mu_assert("Error: when 0 mines exist, a change callback should be sent for every tile.", callback_count == width * height);
+	return 0;
+}
+
 static char * all_tests() {
 	puts("Test: Initialization...");
 	mu_run_test(test_init);
@@ -129,8 +147,11 @@ static char * all_tests() {
 	puts("Test: Adjacent mine counters...");
 	mu_run_test(test_adjacent_mine_counts);
 
-	puts("Test: 0 mines/Win state");
+	puts("Test: 0 mines/Win state...");
 	mu_run_test(test_win_state);
+
+	puts("Test: Changed tile callbacks...");
+	mu_run_test(test_callbacks);
 	return 0;
 }
  
