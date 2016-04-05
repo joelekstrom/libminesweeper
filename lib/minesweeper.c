@@ -20,6 +20,7 @@ struct board *board_init(unsigned width, unsigned height, float mine_density, ui
 	board->_height = height;
 	board->_mine_density = mine_density;
 	board->_mine_count = 0;
+	board->_flag_count = 0;
 	board->_opened_tile_count = 0;
 	memset(board->_data, 0, width * height);
 	return board;
@@ -145,8 +146,11 @@ void send_update_callback(struct board *board, uint8_t *tile) {
 
 void toggle_flag_at_cursor(struct board *board) {
 	uint8_t *tile = get_tile_at(board, board->cursor_x, board->cursor_y);
-	*tile ^= TILE_FLAG;
-	send_update_callback(board, tile);
+	if (!(*tile & TILE_OPENED)) {
+		board->_flag_count += (*tile & TILE_FLAG) ? -1 : 1;
+		*tile ^= TILE_FLAG;
+		send_update_callback(board, tile);
+	}
 }
 
 static inline bool all_tiles_opened(struct board *board) {

@@ -128,6 +128,18 @@ static char * test_callbacks() {
 	return 0;
 }
 
+static char * test_flag_counts() {
+	board = board_init(width, height, 0.0, board_buffer);
+	toggle_flag_at_cursor(board);
+	mu_assert("Error: after placing a flag, _flag_count should increase.", board->_flag_count == 1);
+	toggle_flag_at_cursor(board);
+	mu_assert("Error: after toggling flag at the same tile, _flag_count should decrease.", board->_flag_count == 0);
+	open_tile_at_cursor(board);
+	toggle_flag_at_cursor(board);
+	mu_assert("Error: when attempting to toggle flag at an already opened tile, nothing should happen, and flag count should stay at 0.", board->_flag_count == 0);
+	return 0;
+}
+
 static char * all_tests() {
 	puts("Test: Initialization...");
 	mu_run_test(test_init);
@@ -152,6 +164,9 @@ static char * all_tests() {
 
 	puts("Test: Changed tile callbacks...");
 	mu_run_test(test_callbacks);
+
+	puts("Test: Flag counts...");
+	mu_run_test(test_flag_counts);
 	return 0;
 }
  

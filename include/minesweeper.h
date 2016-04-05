@@ -41,6 +41,7 @@ struct board {
 	float _mine_density;
 	unsigned _mine_count;
 	unsigned _opened_tile_count;
+	unsigned _flag_count;
 	uint8_t *_data;
 };
 
