@@ -1,5 +1,5 @@
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef MINESWEEPER_H
+#define MINESWEEPER_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,24 +18,24 @@ enum direction {
 	DOWN
 };
 
-enum board_state {
-	BOARD_PENDING_START,
-	BOARD_PLAYING,
-	BOARD_WIN,
-	BOARD_GAME_OVER
+enum minesweeper_game_state {
+	MINESWEEPER_PENDING_START,
+	MINESWEEPER_PLAYING,
+	MINESWEEPER_WIN,
+	MINESWEEPER_GAME_OVER
 };
 
-struct board;
-typedef void (*mswp_callback) (struct board *board, uint8_t *tile, int x, int y);
+struct minesweeper_game;
+typedef void (*minesweeper_callback) (struct minesweeper_game *board, uint8_t *tile, int x, int y);
 
-struct board {
+struct minesweeper_game {
 	unsigned cursor_x;
 	unsigned cursor_y;
-	mswp_callback on_tile_updated;
+	minesweeper_callback on_tile_updated;
 
-	/* "Private" variables. Do not change from outside library,
+	/* "Readonly" variables. Do not change from outside library,
 	 * or undefined things will happen */
-	enum board_state _state;
+	enum minesweeper_game_state _state;
 	unsigned _width;
 	unsigned _height;
 	float _mine_density;
@@ -46,7 +46,7 @@ struct board {
 };
 
 /**
- * Create a new game board. Your frontends can use as many boards as it wants,
+ * Create a new game. Your frontends can use as many games as it wants simulatenously,
  * for example to implement multiplayer.
  *
  * Mine density is a value between 0.0 and 1.0. At 1.0, every tile will contain
@@ -59,8 +59,8 @@ struct board {
  * The returned pointer will point to somewhere within buffer, so to remove
  * a board, you can invalidate the whole buffer.
  */
-struct board *board_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer);
-size_t minimum_buffer_size(unsigned width, unsigned height);
+struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer);
+size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height);
 
 /**
  * Use the move_cursor function to move the cursor around, one step at a time.
@@ -76,11 +76,11 @@ size_t minimum_buffer_size(unsigned width, unsigned height);
  * If you do want to display a cursor, the library takes care of all movement
  * and out of bounds-handling for you, so you should use the built-in way.
  */
-void move_cursor(struct board *board, enum direction direction, bool wrap);
-void open_tile_at_cursor(struct board *board);
-void toggle_flag_at_cursor(struct board *board);
-uint8_t *get_tile_at(struct board *board, int x, int y);
-void get_adjacent_tiles(struct board *board, uint8_t *tile, uint8_t **adjacent_tiles);
-uint8_t adjacent_mine_count(uint8_t *tile);
+void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap);
+void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile);
+void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
+uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y);
+void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t **adjacent_tiles);
+uint8_t minesweeper_get_adjacent_mine_count(uint8_t *tile);
 
 #endif
