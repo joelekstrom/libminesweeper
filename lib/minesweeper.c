@@ -86,26 +86,27 @@ uint8_t count_adjacent_flags(struct minesweeper_game *game, uint8_t *tile) {
 	return count;
 }
 
-void increment_adjacent_mine_count(uint8_t *tile) {
-	uint8_t value = minesweeper_get_adjacent_mine_count(tile) + 1;
-	uint8_t shifted_value = value << 4;
+void adjust_adjacent_mine_count(uint8_t *tile, int8_t value) {
+	uint8_t new_value = minesweeper_get_adjacent_mine_count(tile) + value;
+	uint8_t shifted_value = new_value << 4;
 	*tile = shifted_value | (*tile & 0x0F);
 }
 
-void place_mine(struct minesweeper_game *game, uint8_t *tile) {
-	bool has_mine = *tile & TILE_MINE;
-	if (!has_mine) {
-		uint8_t i;
-		uint8_t *adjacent_tiles[8];
-		*tile |= TILE_MINE;
-		game->_mine_count++;
+void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile) {
+	uint8_t i;
+	uint8_t *adjacent_tiles[8];
+	int8_t count_modifier = -1;
+	*tile ^= TILE_MINE;
+	if (*tile & TILE_MINE) {
+		count_modifier = 1;
+	}
+	game->_mine_count += count_modifier;
 
-		/* Increase the mine counts on all adjacent tiles */
-		minesweeper_get_adjacent_tiles(game, tile, adjacent_tiles);
-		for (i = 0; i < 8; i++) {
-			if (adjacent_tiles[i]) {
-				increment_adjacent_mine_count(adjacent_tiles[i]);
-			}
+	/* Increase the mine counts on all adjacent tiles */
+	minesweeper_get_adjacent_tiles(game, tile, adjacent_tiles);
+	for (i = 0; i < 8; i++) {
+		if (adjacent_tiles[i]) {
+			adjust_adjacent_mine_count(adjacent_tiles[i], count_modifier);
 		}
 	}
 }
@@ -116,8 +117,8 @@ void generate_mines(struct minesweeper_game *game, uint8_t *safe_tile) {
 	unsigned i;
 	for (i = 0; i < mine_count; i++) {
 		uint8_t *random_tile = &game->_data[rand() % tile_count];
-		if (random_tile != safe_tile) {
-			place_mine(game, random_tile);
+		if (random_tile != safe_tile && !(*random_tile & TILE_MINE)) {
+			minesweeper_toggle_mine(game, random_tile);
 		}
 	}
 }

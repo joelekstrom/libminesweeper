@@ -62,7 +62,7 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height);
 
 /**
- * Use the move_cursor function to move the cursor around, one step at a time.
+ * Use the minesweeper_move_cursor() function to move the cursor around, one step at a time.
  * If you for example are implementing a mouse based UI, you can instead set the
  * cursor position directly using minesweeper_set_cursor(). If 'wrap' is true, the cursor
  * will wrap around the board, meaning if that you move it out of bounds, it
@@ -79,10 +79,34 @@ size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height);
  */
 void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap);
 void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y);
+
+/**
+ * Open a tile if it isn't flagged. All adjacent tiles that do not have
+ * an adjacent mine count will also be opened. This will recursively
+ * open tiles until adjacent mine counts are encountered.
+ *
+ * If minesweeper_open_tile() is called with an already open tile, it will
+ * open all adjacent non-flagged tiles if the correct number of flags has
+ * been placed around it.
+ */
 void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile);
 void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
 uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y);
 void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t **adjacent_tiles);
+
+/**
+ * Returns the number of adjacent mines for a tile. This is
+ * the colored number that is shown in most minesweeper
+ * implementations.
+ */
 uint8_t minesweeper_get_adjacent_mine_count(uint8_t *tile);
+
+/**
+ * Toggles a mine on a tile, and adjusts the adjacent mine counts for all
+ * adjacent tiles.
+ *
+ * This function can be used to add/remove mines to alter the game.
+ */
+void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile);
 
 #endif

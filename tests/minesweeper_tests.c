@@ -72,30 +72,38 @@ static char * test_open_mine() {
 	return 0;
 }
 
-extern void place_mine(struct minesweeper_game *game, uint8_t *tile);
-
 static char * test_adjacent_mine_counts() {
-	uint8_t *t;
+	uint8_t *center_tile;
+	uint8_t *left_tile;
+	uint8_t *right_tile;
 	uint8_t *adj_tiles[8];
 	uint8_t mine_count;
 	int i;
 
 	game = minesweeper_init(width, height, 0.1, game_buffer);
+	center_tile = minesweeper_get_tile_at(game, 10, 10);
+	left_tile = minesweeper_get_tile_at(game, 9, 10);
+	right_tile = minesweeper_get_tile_at(game, 11, 10);
 
-	place_mine(game, minesweeper_get_tile_at(game, 10, 10));
-	place_mine(game, minesweeper_get_tile_at(game, 10, 11));
+	minesweeper_toggle_mine(game, left_tile);
+	minesweeper_toggle_mine(game, right_tile);
 
-	t = minesweeper_get_tile_at(game, 9, 10);
-	mine_count = minesweeper_get_adjacent_mine_count(t);
-	mu_assert("Error: the tile at (9, 10) must have a mine_count of 2 after mines have been placed at (10, 10) and (10, 11).", mine_count == 2);
+	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
+	mu_assert("Error: the tile at (10, 10) must have a mine_count of 2 after mines have been placed at (9, 10) and (11, 10).", mine_count == 2);
 
-	minesweeper_get_adjacent_tiles(game, t, adj_tiles);
+	minesweeper_get_adjacent_tiles(game, center_tile, adj_tiles);
 	for (i = 0; i < 8; i++) {
-		place_mine(game, adj_tiles[i]);
+		if (adj_tiles[i] != left_tile && adj_tiles[i] != right_tile) {
+			minesweeper_toggle_mine(game, adj_tiles[i]);
+		}
 	}
 
-	mine_count = minesweeper_get_adjacent_mine_count(t);
-	mu_assert("Error: the tile at (9, 10) must have a mine_count of 8 after mines have been placed at every tile around it.", mine_count == 8);
+	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
+	mu_assert("Error: the tile at (10, 10) must have a mine_count of 8 after mines have been placed at every tile around it.", mine_count == 8);
+
+	minesweeper_toggle_mine(game, left_tile);
+	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
+	mu_assert("Error: the tile at (10, 10) must have a mine_count of 7 after the mine has been toggled off on the tile to the left of it.", mine_count == 7);
 
 	return 0;
 }
