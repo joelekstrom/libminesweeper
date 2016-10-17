@@ -7,9 +7,6 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 	   treat the rest of the buffer as tile storage. */
 	struct minesweeper_game *game = (struct minesweeper_game *)buffer;
 	game->_data = buffer + sizeof(struct minesweeper_game);
-
-	game->cursor_x = width / 2;
-	game->cursor_y = height / 2;
 	game->on_tile_updated = NULL;
 	game->_state = MINESWEEPER_PENDING_START;
 	game->_width = width;
@@ -18,6 +15,7 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 	game->_mine_count = 0;
 	game->_flag_count = 0;
 	game->_opened_tile_count = 0;
+	game->_selected_tile = NULL;
 	memset(game->_data, 0, width * height);
 	return game;
 }
@@ -242,31 +240,46 @@ void open_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile) {
 	open_line_segments(game,lx, rx, ty + 1);
 }
 
+void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y) {
+	if (is_out_of_bounds(game, x, y)) {
+		game->_selected_tile = NULL;
+	} else {	
+		game->_selected_tile = minesweeper_get_tile_at(game, x, y);
+	}
+}
+
 void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap) {
+	unsigned x, y;
+	if (game->_selected_tile == NULL) {
+		return;
+	}
+
+	get_xy(game, game->_selected_tile, &x, &y);
 	switch (direction) {
 	case LEFT:
-		if (game->cursor_x != 0)
-			game->cursor_x--;
+		if (x != 0)
+			x--;
 		else if (should_wrap)
-			game->cursor_x = game->_width - 1;
+			x = game->_width - 1;
 		break;
 	case RIGHT:
-		if (game->cursor_x != game->_width - 1)
-			game->cursor_x++;
+		if (x != game->_width - 1)
+			x++;
 		else if (should_wrap)
-			game->cursor_x = 0;
+			x = 0;
 		break;
 	case UP:
-		if (game->cursor_y != 0)
-			game->cursor_y--;
+		if (y != 0)
+			y--;
 		else if (should_wrap)
-			game->cursor_y = game->_height - 1;
+			y = game->_height - 1;
 		break;
 	case DOWN:
-		if (game->cursor_y != game->_height - 1)
-			game->cursor_y++;
+		if (y != game->_height - 1)
+			y++;
 		else if (should_wrap)
-			game->cursor_y = 0;
+			y = 0;
 		break;
 	}
+	minesweeper_set_cursor(game, x, y);
 }

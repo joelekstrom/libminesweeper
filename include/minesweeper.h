@@ -29,8 +29,6 @@ struct minesweeper_game;
 typedef void (*minesweeper_callback) (struct minesweeper_game *board, uint8_t *tile, int x, int y);
 
 struct minesweeper_game {
-	unsigned cursor_x;
-	unsigned cursor_y;
 	minesweeper_callback on_tile_updated;
 
 	/* "Readonly" variables. Do not change from outside library,
@@ -42,6 +40,7 @@ struct minesweeper_game {
 	unsigned _mine_count;
 	unsigned _opened_tile_count;
 	unsigned _flag_count;
+	uint8_t *_selected_tile;
 	uint8_t *_data;
 };
 
@@ -65,18 +64,21 @@ size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height);
 /**
  * Use the move_cursor function to move the cursor around, one step at a time.
  * If you for example are implementing a mouse based UI, you can instead set the
- * cursor position directly in the board struct. If 'wrap' is true, the cursor
+ * cursor position directly using minesweeper_set_cursor(). If 'wrap' is true, the cursor
  * will wrap around the board, meaning if that you move it out of bounds, it
  * will jump to the opposite side. This can make the game more efficient to
  * play with key movement.
  *
- * Note that there's no requirement for your UI to display the cursor, it's
- * just there to be the basis for the "open_tile_at_cursor"-function.
+ * Note that there's no requirement for your UI to display the cursor. It exists
+ * to make common game patterns simpler to implement.
+ *
+ * Setting/moving the cursor will update the _selected_tile variable in the game struct.
  *
  * If you do want to display a cursor, the library takes care of all movement
  * and out of bounds-handling for you, so you should use the built-in way.
  */
 void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap);
+void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y);
 void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile);
 void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
 uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y);
