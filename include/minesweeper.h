@@ -26,18 +26,15 @@ enum minesweeper_game_state {
 };
 
 struct minesweeper_game;
-typedef void (*minesweeper_callback) (struct minesweeper_game *board, uint8_t *tile, int x, int y);
+typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile, int x, int y);
 
 /**
- Struct containing all data for a single minesweeper game. You should
- never modify fields directly. Instead, use the functions below to
- modify the game states and all fields will be correctly updated.
-
- The only exception to this is tile_update_callback, which
- can be changed at any time. tile_update_callback is a function
- pointer you can assign to be informed every time a tile is updated,
- for example flagged/opened. This can be used to avoid redrawing the
- whole game, and instead only redrawing updated tiles.
+ * Contains data for a single minesweeper game.
+ *
+ * Do not modify fields directly - use the functions below instead. The only
+ * exception to this is tile_update_callback, which can be set at any time.
+ *
+ * Created automatically by minesweeper_init().
  */
 struct minesweeper_game {
 	unsigned width;
@@ -45,74 +42,80 @@ struct minesweeper_game {
 	unsigned mine_count;
 	unsigned opened_tile_count;
 	unsigned flag_count;
-	uint8_t *selected_tile;
-	uint8_t *data;
+	uint8_t *selected_tile; /* Pointer to the tile under the cursor */
+	uint8_t *data;          /* Tile buffer */
 	enum minesweeper_game_state state;
-	minesweeper_callback tile_update_callback;
+	minesweeper_callback tile_update_callback; /* Optional function pointer to receive tile state updates */
 };
 
 /**
- * Create a new game. Your frontends can use as many games as it wants simulatenously,
- * for example to implement multiplayer.
+ * Initialize a new game
  *
- * Mine density is a value between 0.0 and 1.0. At 1.0, every tile will contain
- * a mine, and at 0.0, no tiles will contain mines.
+ * width, height: Adjusts the size of the game area
+ * mine_density: A value between 0 and 1. When 0, no tiles will have mines. When 1, all tiles will have mines
+ * buffer: A memory location to store the game at. Must be at least the size returned from minesweeper_minimum_buffer_size() for the given height and width
  *
- * Buffer is the memory location where you want to keep your board data.
- * The buffer must be at least the size returned from minimum_buffer_size
- * for the specified height and width values.
- *
- * The returned pointer will point to somewhere within buffer, so to remove
- * a board, you can invalidate the whole buffer.
+ * Returns a pointer to somewhere within buffer. To delete a game, invalidate entire buffer.
  */
 struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer);
 size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height);
 
 /**
- * Use the minesweeper_move_cursor() function to move the cursor around, one step at a time.
- * If you for example are implementing a mouse based UI, you can instead set the
- * cursor position directly using minesweeper_set_cursor(). If 'wrap' is true, the cursor
- * will wrap around the board, meaning if that you move it out of bounds, it
- * will jump to the opposite side. This can make the game more efficient to
- * play with key movement.
- *
- * Note that there's no requirement for your UI to display the cursor. It exists
- * to make common game patterns simpler to implement.
- *
- * Setting/moving the cursor will update the _selected_tile variable in the game struct.
- *
- * If you do want to display a cursor, the library takes care of all movement
- * and out of bounds-handling for you, so you should use the built-in way.
+ * Set the location of the cursor. "The cursor"
+ * is another name for game->selected_tile.
  */
-void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap);
 void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y);
 
 /**
- * Open a tile if it isn't flagged. All adjacent tiles that do not have
- * an adjacent mine count will also be opened. This will recursively
- * open tiles until adjacent mine counts are encountered.
+ * Move the cursor in a specified direction.
  *
- * If minesweeper_open_tile() is called with an already open tile, it will
- * open all adjacent non-flagged tiles if the correct number of flags has
- * been placed around it.
+ * If should_wrap is true, attempting to move outside the game bounds will
+ * result in the cursor wrapping to the opposite side of the game area.
+ *
+ * This will update game->selected_tile.
+ */
+void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap);
+
+/**
+ * Opens an unflagged tile.
+ *
+ * Will recursively open all adjacent tiles that have zero
+ * adjacent mines.
+ *
+ * If tile is already opened, all adjacent unflagged tiles will
+ * be opened instead, to imitate the quick-open functionality of most
+ * minesweeper games.
  */
 void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile);
+
+/**
+ * Toggles a flag on an unopened tile.
+ */
 void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
+
+/**
+ * Get pointer to tile at location. Returns NULL if location if out of bounds.
+ */
 uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y);
+
+/**
+ * Get all tiles adjacent to tile. A tile can have at most 8 adjacent tiles,
+ * but tiles adjacent to edges of the game area will have fewer.
+ *
+ * adjacent_tiles: A pointer to an array of 8 uint8_t pointers. The resulting tiles will
+ * be written to this array. Some tiles may be NULL, if tile is adjacent to an edge.
+ */
 void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t **adjacent_tiles);
 
 /**
  * Returns the number of adjacent mines for a tile. This is
- * the colored number that is shown in most minesweeper
- * implementations.
+ * the colored number that is shown on tiles in most minesweepers.
  */
 uint8_t minesweeper_get_adjacent_mine_count(uint8_t *tile);
 
 /**
  * Toggles a mine on a tile, and adjusts the adjacent mine counts for all
  * adjacent tiles.
- *
- * This function can be used to add/remove mines to alter the game.
  */
 void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile);
 
