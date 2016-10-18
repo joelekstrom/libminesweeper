@@ -36,7 +36,6 @@ struct minesweeper_game {
 	enum minesweeper_game_state _state;
 	unsigned _width;
 	unsigned _height;
-	float _mine_density;
 	unsigned _mine_count;
 	unsigned _opened_tile_count;
 	unsigned _flag_count;

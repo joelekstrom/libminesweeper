@@ -11,6 +11,7 @@ uint8_t *game_buffer = NULL;
 struct minesweeper_game *game = NULL;
 
 static char * test_init() {
+	puts("Test: Initialization...");
 	game_buffer = malloc(minesweeper_minimum_buffer_size(width, height));
 	game = minesweeper_init(width, height, 1.0, game_buffer);
     mu_assert("Error: game data must be offset in the buffer.", game->_data - sizeof(struct minesweeper_game) == (uint8_t *)game);
@@ -31,6 +32,7 @@ static int count_adjacent_tiles(uint8_t **adjacent_tiles) {
 
 static char * test_get_tile() {
 	uint8_t *tile = minesweeper_get_tile_at(game, 10, 10);
+	puts("Test: Get tile...");
 	mu_assert("Error: the tile at (10, 10) should exist after init.", tile != NULL);
 
 	tile = minesweeper_get_tile_at(game, -1, 10);
@@ -44,6 +46,7 @@ static char * test_get_tile() {
 static char * test_get_adjacent_tiles() {
 	uint8_t *tile = minesweeper_get_tile_at(game, 0, 0);
 	uint8_t *adjacent_tiles[8];
+	puts("Test: Get adjacent tiles...");
 	minesweeper_get_adjacent_tiles(game, tile, adjacent_tiles);
 	mu_assert("Error: the tile at (0, 0) should have 3 adjacent tiles.", count_adjacent_tiles(adjacent_tiles) == 3);
 
@@ -58,6 +61,7 @@ static char * test_get_adjacent_tiles() {
 }
 
 static char * test_open_first_tile() {
+	puts("Test: Open first tile...");
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_open_tile(game, game->_selected_tile);
 	mu_assert("Error: after opening the first tile, state should be: playing", game->_state == MINESWEEPER_PLAYING);
@@ -66,6 +70,7 @@ static char * test_open_first_tile() {
 }
 
 static char * test_open_mine() {
+	puts("Test: Open mine...");
 	minesweeper_set_cursor(game, 0, 0);
 	minesweeper_open_tile(game, game->_selected_tile);
 	mu_assert("Error: After opening a mine tile, state must be game_over.", game->_state == MINESWEEPER_GAME_OVER);
@@ -80,7 +85,8 @@ static char * test_adjacent_mine_counts() {
 	uint8_t mine_count;
 	int i;
 
-	game = minesweeper_init(width, height, 0.1, game_buffer);
+	puts("Test: Adjacent mine counters...");
+	game = minesweeper_init(width, height, 0.0, game_buffer);
 	center_tile = minesweeper_get_tile_at(game, 10, 10);
 	left_tile = minesweeper_get_tile_at(game, 9, 10);
 	right_tile = minesweeper_get_tile_at(game, 11, 10);
@@ -91,6 +97,8 @@ static char * test_adjacent_mine_counts() {
 	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
 	mu_assert("Error: the tile at (10, 10) must have a mine_count of 2 after mines have been placed at (9, 10) and (11, 10).", mine_count == 2);
 
+	// Toggle mines on all tiles adjacent to the center tile, except
+	// left and right tiles which already have mines
 	minesweeper_get_adjacent_tiles(game, center_tile, adj_tiles);
 	for (i = 0; i < 8; i++) {
 		if (adj_tiles[i] != left_tile && adj_tiles[i] != right_tile) {
@@ -109,6 +117,7 @@ static char * test_adjacent_mine_counts() {
 }
 
 static char * test_win_state() {
+	puts("Test: 0 mines/Win state...");
 	/* Init the game with zero mines */
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, 0, 0);
@@ -124,6 +133,7 @@ void callback(struct minesweeper_game *game, uint8_t *tile, int x, int y) {
 }
 
 static char * test_callbacks() {
+	puts("Test: Changed tile callbacks...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_toggle_flag(game, game->_selected_tile);
@@ -138,6 +148,7 @@ static char * test_callbacks() {
 }
 
 static char * test_flag_counts() {
+	puts("Test: Flag counts...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_toggle_flag(game, game->_selected_tile);
@@ -150,33 +161,48 @@ static char * test_flag_counts() {
 	return 0;
 }
 
+static char * test_selected_tile() {
+	puts("Test: Selected tile...");
+	game = minesweeper_init(width, height, 0.0, game_buffer);
+	mu_assert("Error: Selected tile should be NULL after game init", game->_selected_tile == NULL);
+	minesweeper_toggle_flag(game, game->_selected_tile);
+	mu_assert("Error: Flag count should not change when toggling flag on empty cursor tile", game->_flag_count == 0);
+	minesweeper_set_cursor(game, 10, 10);
+	mu_assert("Error: Selected tile should be at (10, 10) after a call to set_cursor", game->_selected_tile == minesweeper_get_tile_at(game, 10, 10));
+	minesweeper_set_cursor(game, 9999, 9999);
+	mu_assert("Error: Selected tile should be set to NULL when attempting to set cursor out of bounds", game->_selected_tile == NULL);
+	return 0;
+}
+
+static char * test_cursor_movement() {
+	puts("Test: Cursor movement...");
+	game = minesweeper_init(width, height, 0.0, game_buffer);
+	minesweeper_set_cursor(game, 10, 10);
+	minesweeper_move_cursor(game, RIGHT, false);
+	minesweeper_move_cursor(game, RIGHT, false);
+	minesweeper_move_cursor(game, DOWN, false);
+	mu_assert("Error: Selected tile should be at (12, 11) after cursor moving", game->_selected_tile == minesweeper_get_tile_at(game, 12, 11));
+	minesweeper_set_cursor(game, 0, 0);
+	minesweeper_move_cursor(game, LEFT, false);
+	mu_assert("Error: Cursor should not move outside of bounds if should_wrap is false", game->_selected_tile == minesweeper_get_tile_at(game, 0, 0));
+	minesweeper_move_cursor(game, LEFT, true);
+	minesweeper_move_cursor(game, UP, true);
+	mu_assert("Error: Cursor should have wrapped to other side of the board if should_wrap is true", game->_selected_tile == minesweeper_get_tile_at(game, width - 1, height - 1));
+	return 0;
+}
+
 static char * all_tests() {
-	puts("Test: Initialization...");
 	mu_run_test(test_init);
-
-	puts("Test: Get tile...");
 	mu_run_test(test_get_tile);
-
-	puts("Test: Get adjacent tiles...");
 	mu_run_test(test_get_adjacent_tiles);
-
-	puts("Test: Open first tile...");
 	mu_run_test(test_open_first_tile);
-
-	puts("Test: Open mine...");
 	mu_run_test(test_open_mine);
-
-	puts("Test: Adjacent mine counters...");
 	mu_run_test(test_adjacent_mine_counts);
-
-	puts("Test: 0 mines/Win state...");
 	mu_run_test(test_win_state);
-
-	puts("Test: Changed tile callbacks...");
 	mu_run_test(test_callbacks);
-
-	puts("Test: Flag counts...");
 	mu_run_test(test_flag_counts);
+	mu_run_test(test_selected_tile);
+	mu_run_test(test_cursor_movement);
 	return 0;
 }
  

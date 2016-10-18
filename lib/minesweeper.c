@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+void generate_mines(struct minesweeper_game *game, float density);
+
 struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float mine_density, uint8_t *buffer) {
 	/* Place a game object in the start of the buffer, and
 	   treat the rest of the buffer as tile storage. */
@@ -11,12 +13,12 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 	game->_state = MINESWEEPER_PENDING_START;
 	game->_width = width;
 	game->_height = height;
-	game->_mine_density = mine_density;
 	game->_mine_count = 0;
 	game->_flag_count = 0;
 	game->_opened_tile_count = 0;
 	game->_selected_tile = NULL;
 	memset(game->_data, 0, width * height);
+	generate_mines(game, mine_density);
 	return game;
 }
 
@@ -96,6 +98,11 @@ void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile) {
 	uint8_t i;
 	uint8_t *adjacent_tiles[8];
 	int8_t count_modifier = -1;
+
+	if (!tile) {
+		return;
+	}
+	
 	*tile ^= TILE_MINE;
 	if (*tile & TILE_MINE) {
 		count_modifier = 1;
@@ -111,13 +118,13 @@ void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile) {
 	}
 }
 
-void generate_mines(struct minesweeper_game *game, uint8_t *safe_tile) {
+void generate_mines(struct minesweeper_game *game, float density) {
 	unsigned tile_count = game->_width * game->_height;
-	unsigned mine_count = tile_count * game->_mine_density;
+	unsigned mine_count = tile_count * density;
 	unsigned i;
 	for (i = 0; i < mine_count; i++) {
 		uint8_t *random_tile = &game->_data[rand() % tile_count];
-		if (random_tile != safe_tile && !(*random_tile & TILE_MINE)) {
+		if (!(*random_tile & TILE_MINE)) {
 			minesweeper_toggle_mine(game, random_tile);
 		}
 	}
@@ -131,7 +138,7 @@ void send_update_callback(struct minesweeper_game *game, uint8_t *tile) {
 }
 
 void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile) {
-	if (!(*tile & TILE_OPENED)) {
+	if (tile && !(*tile & TILE_OPENED)) {
 		game->_flag_count += (*tile & TILE_FLAG) ? -1 : 1;
 		*tile ^= TILE_FLAG;
 		send_update_callback(game, tile);
@@ -184,13 +191,17 @@ void _open_tile(struct minesweeper_game *game, uint8_t *tile, bool cascade) {
 
 void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile) {
 	if (game->_state == MINESWEEPER_PENDING_START) {
-		generate_mines(game, tile);
 		game->_state = MINESWEEPER_PLAYING;
+
+		// Delete any potential mine on the first opened tile
+		if (*tile & TILE_MINE) {
+			minesweeper_toggle_mine(game, tile);
+		}
 	}
 	_open_tile(game, tile, true);
 }
 
-void open_line_segments(struct minesweeper_game* game, unsigned x1, unsigned x2, unsigned y) {
+void open_line_segments(struct minesweeper_game *game, unsigned x1, unsigned x2, unsigned y) {
 	unsigned x;
 	uint8_t* tile;
 	for (x = x1; x <= x2 && (tile = minesweeper_get_tile_at(game, x, y)); x++) {
