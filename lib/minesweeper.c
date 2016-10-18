@@ -47,7 +47,7 @@ static inline void get_xy(struct minesweeper_game *game, uint8_t *tile, unsigned
 	*x = tile_index % game->width;
 }
 
-void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t **adjacent_tiles) {
+void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t *adjacent_tiles[8]) {
 	unsigned x, y; get_xy(game, tile, &x, &y);
 	adjacent_tiles[0] = minesweeper_get_tile_at(game, x - 1, y - 1);
 	adjacent_tiles[1] = minesweeper_get_tile_at(game, x - 1, y);

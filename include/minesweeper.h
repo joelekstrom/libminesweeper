@@ -105,7 +105,7 @@ uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y);
  * adjacent_tiles: A pointer to an array of 8 uint8_t pointers. The resulting tiles will
  * be written to this array. Some tiles may be NULL, if tile is adjacent to an edge.
  */
-void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t **adjacent_tiles);
+void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t *adjacent_tiles[8]);
 
 /**
  * Returns the number of adjacent mines for a tile. This is
