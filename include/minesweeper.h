@@ -99,6 +99,13 @@ void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
 uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, unsigned x, unsigned y);
 
 /**
+ * Get location of a tile.
+ *
+ * x/y: Pointers to integers which the result will be written to.
+ */
+void minesweeper_get_tile_location(struct minesweeper_game *game, uint8_t *tile, unsigned *x, unsigned *y);
+
+/**
  * Get all tiles adjacent to tile. A tile can have at most 8 adjacent tiles,
  * but tiles adjacent to edges of the game area will have fewer.
  *
