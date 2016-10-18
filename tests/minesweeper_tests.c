@@ -128,7 +128,7 @@ static char * test_win_state() {
 }
 
 static unsigned callback_count = 0;
-void callback(struct minesweeper_game *game, uint8_t *tile, unsigned x, unsigned y) {
+void callback(struct minesweeper_game *game, uint8_t *tile) {
 	callback_count++;
 }
 

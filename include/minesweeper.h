@@ -26,7 +26,7 @@ enum minesweeper_game_state {
 };
 
 struct minesweeper_game;
-typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile, unsigned x, unsigned y);
+typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile);
 
 /**
  * Contains data for a single minesweeper game.

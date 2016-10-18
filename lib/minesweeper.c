@@ -132,8 +132,7 @@ void generate_mines(struct minesweeper_game *game, float density) {
 
 void send_update_callback(struct minesweeper_game *game, uint8_t *tile) {
 	if (game->tile_update_callback != NULL) {
-		unsigned x, y; minesweeper_get_tile_location(game, tile, &x, &y);
-		game->tile_update_callback(game, tile, x, y);
+		game->tile_update_callback(game, tile);
 	}
 }
 
