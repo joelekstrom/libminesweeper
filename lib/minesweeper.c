@@ -26,8 +26,8 @@ size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height) {
 	return sizeof(struct minesweeper_game) + width * height;
 }
 
-bool is_out_of_bounds(struct minesweeper_game *b, int x, int y) {
-	return x < 0 || x >= b->width || y < 0 || y >= b->height;
+bool is_out_of_bounds(struct minesweeper_game *b, unsigned x, unsigned y) {
+	return x >= b->width || y >= b->height;
 }
 
 /**
@@ -35,20 +35,20 @@ bool is_out_of_bounds(struct minesweeper_game *b, int x, int y) {
  * will return NULL if the tile is out of bounds. This
  * is to simplify code that enumerates "adjacent" tiles.
  */
-uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y) {
+uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, unsigned x, unsigned y) {
 	if (is_out_of_bounds(game, x, y))
 		return NULL;
 	return &game->data[game->width * y + x];
 }
 
-static inline void get_xy(struct minesweeper_game *game, uint8_t *tile, unsigned *x, unsigned *y) {
+void minesweeper_get_tile_location(struct minesweeper_game *game, uint8_t *tile, unsigned *x, unsigned *y) {
 	unsigned tile_index = tile - game->data;
 	*y = tile_index / game->width;
 	*x = tile_index % game->width;
 }
 
 void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t *adjacent_tiles[8]) {
-	unsigned x, y; get_xy(game, tile, &x, &y);
+	unsigned x, y; minesweeper_get_tile_location(game, tile, &x, &y);
 	adjacent_tiles[0] = minesweeper_get_tile_at(game, x - 1, y - 1);
 	adjacent_tiles[1] = minesweeper_get_tile_at(game, x - 1, y);
 	adjacent_tiles[2] = minesweeper_get_tile_at(game, x - 1, y + 1);
@@ -132,7 +132,7 @@ void generate_mines(struct minesweeper_game *game, float density) {
 
 void send_update_callback(struct minesweeper_game *game, uint8_t *tile) {
 	if (game->tile_update_callback != NULL) {
-		unsigned x, y; get_xy(game, tile, &x, &y);
+		unsigned x, y; minesweeper_get_tile_location(game, tile, &x, &y);
 		game->tile_update_callback(game, tile, x, y);
 	}
 }
@@ -252,7 +252,7 @@ void open_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile) {
 	open_line_segments(game,lx, rx, ty + 1);
 }
 
-void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y) {
+void minesweeper_set_cursor(struct minesweeper_game *game, unsigned x, unsigned y) {
 	if (is_out_of_bounds(game, x, y)) {
 		game->selected_tile = NULL;
 	} else {	
@@ -266,7 +266,7 @@ void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direc
 		return;
 	}
 
-	get_xy(game, game->selected_tile, &x, &y);
+	minesweeper_get_tile_location(game, game->selected_tile, &x, &y);
 	switch (direction) {
 	case LEFT:
 		if (x != 0)

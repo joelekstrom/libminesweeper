@@ -26,7 +26,7 @@ enum minesweeper_game_state {
 };
 
 struct minesweeper_game;
-typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile, int x, int y);
+typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile, unsigned x, unsigned y);
 
 /**
  * Contains data for a single minesweeper game.
@@ -64,7 +64,7 @@ size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height);
  * Set the location of the cursor. "The cursor"
  * is another name for game->selected_tile.
  */
-void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y);
+void minesweeper_set_cursor(struct minesweeper_game *game, unsigned x, unsigned y);
 
 /**
  * Move the cursor in a specified direction.
@@ -96,7 +96,7 @@ void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
 /**
  * Get pointer to tile at location. Returns NULL if location if out of bounds.
  */
-uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y);
+uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, unsigned x, unsigned y);
 
 /**
  * Get all tiles adjacent to tile. A tile can have at most 8 adjacent tiles,
