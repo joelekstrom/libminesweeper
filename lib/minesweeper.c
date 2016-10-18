@@ -8,16 +8,16 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 	/* Place a game object in the start of the buffer, and
 	   treat the rest of the buffer as tile storage. */
 	struct minesweeper_game *game = (struct minesweeper_game *)buffer;
-	game->_data = buffer + sizeof(struct minesweeper_game);
-	game->on_tile_updated = NULL;
-	game->_state = MINESWEEPER_PENDING_START;
-	game->_width = width;
-	game->_height = height;
-	game->_mine_count = 0;
-	game->_flag_count = 0;
-	game->_opened_tile_count = 0;
-	game->_selected_tile = NULL;
-	memset(game->_data, 0, width * height);
+	game->data = buffer + sizeof(struct minesweeper_game);
+	game->tile_update_callback = NULL;
+	game->state = MINESWEEPER_PENDING_START;
+	game->width = width;
+	game->height = height;
+	game->mine_count = 0;
+	game->flag_count = 0;
+	game->opened_tile_count = 0;
+	game->selected_tile = NULL;
+	memset(game->data, 0, width * height);
 	generate_mines(game, mine_density);
 	return game;
 }
@@ -27,7 +27,7 @@ size_t minesweeper_minimum_buffer_size(unsigned width, unsigned height) {
 }
 
 bool is_out_of_bounds(struct minesweeper_game *b, int x, int y) {
-	return x < 0 || x >= b->_width || y < 0 || y >= b->_height;
+	return x < 0 || x >= b->width || y < 0 || y >= b->height;
 }
 
 /**
@@ -38,13 +38,13 @@ bool is_out_of_bounds(struct minesweeper_game *b, int x, int y) {
 uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, int x, int y) {
 	if (is_out_of_bounds(game, x, y))
 		return NULL;
-	return &game->_data[game->_width * y + x];
+	return &game->data[game->width * y + x];
 }
 
 static inline void get_xy(struct minesweeper_game *game, uint8_t *tile, unsigned *x, unsigned *y) {
-	unsigned tile_index = tile - game->_data;
-	*y = tile_index / game->_width;
-	*x = tile_index % game->_width;
+	unsigned tile_index = tile - game->data;
+	*y = tile_index / game->width;
+	*x = tile_index % game->width;
 }
 
 void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t **adjacent_tiles) {
@@ -107,7 +107,7 @@ void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile) {
 	if (*tile & TILE_MINE) {
 		count_modifier = 1;
 	}
-	game->_mine_count += count_modifier;
+	game->mine_count += count_modifier;
 
 	/* Increase the mine counts on all adjacent tiles */
 	minesweeper_get_adjacent_tiles(game, tile, adjacent_tiles);
@@ -119,11 +119,11 @@ void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile) {
 }
 
 void generate_mines(struct minesweeper_game *game, float density) {
-	unsigned tile_count = game->_width * game->_height;
+	unsigned tile_count = game->width * game->height;
 	unsigned mine_count = tile_count * density;
 	unsigned i;
 	for (i = 0; i < mine_count; i++) {
-		uint8_t *random_tile = &game->_data[rand() % tile_count];
+		uint8_t *random_tile = &game->data[rand() % tile_count];
 		if (!(*random_tile & TILE_MINE)) {
 			minesweeper_toggle_mine(game, random_tile);
 		}
@@ -131,22 +131,22 @@ void generate_mines(struct minesweeper_game *game, float density) {
 }
 
 void send_update_callback(struct minesweeper_game *game, uint8_t *tile) {
-	if (game->on_tile_updated != NULL) {
+	if (game->tile_update_callback != NULL) {
 		unsigned x, y; get_xy(game, tile, &x, &y);
-		game->on_tile_updated(game, tile, x, y);
+		game->tile_update_callback(game, tile, x, y);
 	}
 }
 
 void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile) {
 	if (tile && !(*tile & TILE_OPENED)) {
-		game->_flag_count += (*tile & TILE_FLAG) ? -1 : 1;
+		game->flag_count += (*tile & TILE_FLAG) ? -1 : 1;
 		*tile ^= TILE_FLAG;
 		send_update_callback(game, tile);
 	}
 }
 
 static inline bool all_tiles_opened(struct minesweeper_game *game) {
-	return game->_opened_tile_count == game->_width * game->_height - game->_mine_count;
+	return game->opened_tile_count == game->width * game->height - game->mine_count;
 }
 
 void open_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile);
@@ -168,16 +168,16 @@ void _open_tile(struct minesweeper_game *game, uint8_t *tile, bool cascade) {
 	}
 
 	*tile |= TILE_OPENED;
-	game->_opened_tile_count += 1;
+	game->opened_tile_count += 1;
 	send_update_callback(game, tile);
 
 	if (*tile & TILE_MINE) {
-		game->_state = MINESWEEPER_GAME_OVER;
+		game->state = MINESWEEPER_GAME_OVER;
 		return;
 	}
 
 	if (all_tiles_opened(game)) {
-		game->_state = MINESWEEPER_WIN;
+		game->state = MINESWEEPER_WIN;
 		return;
 	}
 
@@ -190,8 +190,8 @@ void _open_tile(struct minesweeper_game *game, uint8_t *tile, bool cascade) {
 }
 
 void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile) {
-	if (game->_state == MINESWEEPER_PENDING_START) {
-		game->_state = MINESWEEPER_PLAYING;
+	if (game->state == MINESWEEPER_PENDING_START) {
+		game->state = MINESWEEPER_PLAYING;
 
 		// Delete any potential mine on the first opened tile
 		if (*tile & TILE_MINE) {
@@ -211,9 +211,9 @@ void open_line_segments(struct minesweeper_game *game, unsigned x1, unsigned x2,
 }
 
 void open_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile) {
-	unsigned tile_index = tile - game->_data;
-	unsigned ty = tile_index / game->_width;
-	unsigned tx = tile_index % game->_width;
+	unsigned tile_index = tile - game->data;
+	unsigned ty = tile_index / game->width;
+	unsigned tx = tile_index % game->width;
 	unsigned mine_count;
 	unsigned lx, rx;
 	uint8_t* subtile;
@@ -254,28 +254,28 @@ void open_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile) {
 
 void minesweeper_set_cursor(struct minesweeper_game *game, int x, int y) {
 	if (is_out_of_bounds(game, x, y)) {
-		game->_selected_tile = NULL;
+		game->selected_tile = NULL;
 	} else {	
-		game->_selected_tile = minesweeper_get_tile_at(game, x, y);
+		game->selected_tile = minesweeper_get_tile_at(game, x, y);
 	}
 }
 
 void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direction, bool should_wrap) {
 	unsigned x, y;
-	if (game->_selected_tile == NULL) {
+	if (game->selected_tile == NULL) {
 		return;
 	}
 
-	get_xy(game, game->_selected_tile, &x, &y);
+	get_xy(game, game->selected_tile, &x, &y);
 	switch (direction) {
 	case LEFT:
 		if (x != 0)
 			x--;
 		else if (should_wrap)
-			x = game->_width - 1;
+			x = game->width - 1;
 		break;
 	case RIGHT:
-		if (x != game->_width - 1)
+		if (x != game->width - 1)
 			x++;
 		else if (should_wrap)
 			x = 0;
@@ -284,10 +284,10 @@ void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direc
 		if (y != 0)
 			y--;
 		else if (should_wrap)
-			y = game->_height - 1;
+			y = game->height - 1;
 		break;
 	case DOWN:
-		if (y != game->_height - 1)
+		if (y != game->height - 1)
 			y++;
 		else if (should_wrap)
 			y = 0;

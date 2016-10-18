@@ -28,19 +28,27 @@ enum minesweeper_game_state {
 struct minesweeper_game;
 typedef void (*minesweeper_callback) (struct minesweeper_game *board, uint8_t *tile, int x, int y);
 
-struct minesweeper_game {
-	minesweeper_callback on_tile_updated;
+/**
+ Struct containing all data for a single minesweeper game. You should
+ never modify fields directly. Instead, use the functions below to
+ modify the game states and all fields will be correctly updated.
 
-	/* "Readonly" variables. Do not change from outside library,
-	 * or undefined things will happen */
-	enum minesweeper_game_state _state;
-	unsigned _width;
-	unsigned _height;
-	unsigned _mine_count;
-	unsigned _opened_tile_count;
-	unsigned _flag_count;
-	uint8_t *_selected_tile;
-	uint8_t *_data;
+ The only exception to this is tile_update_callback, which
+ can be changed at any time. tile_update_callback is a function
+ pointer you can assign to be informed every time a tile is updated,
+ for example flagged/opened. This can be used to avoid redrawing the
+ whole game, and instead only redrawing updated tiles.
+ */
+struct minesweeper_game {
+	unsigned width;
+	unsigned height;
+	unsigned mine_count;
+	unsigned opened_tile_count;
+	unsigned flag_count;
+	uint8_t *selected_tile;
+	uint8_t *data;
+	enum minesweeper_game_state state;
+	minesweeper_callback tile_update_callback;
 };
 
 /**

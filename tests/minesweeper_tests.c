@@ -14,8 +14,8 @@ static char * test_init() {
 	puts("Test: Initialization...");
 	game_buffer = malloc(minesweeper_minimum_buffer_size(width, height));
 	game = minesweeper_init(width, height, 1.0, game_buffer);
-    mu_assert("Error: game data must be offset in the buffer.", game->_data - sizeof(struct minesweeper_game) == (uint8_t *)game);
-	mu_assert("Error: after init, state must be pending_start", game->_state == MINESWEEPER_PENDING_START);
+    mu_assert("Error: game data must be offset in the buffer.", game->data - sizeof(struct minesweeper_game) == (uint8_t *)game);
+	mu_assert("Error: after init, state must be pending_start", game->state == MINESWEEPER_PENDING_START);
    	return 0;
 }
 
@@ -63,17 +63,17 @@ static char * test_get_adjacent_tiles() {
 static char * test_open_first_tile() {
 	puts("Test: Open first tile...");
 	minesweeper_set_cursor(game, width / 2, height / 2);
-	minesweeper_open_tile(game, game->_selected_tile);
-	mu_assert("Error: after opening the first tile, state should be: playing", game->_state == MINESWEEPER_PLAYING);
-	mu_assert("Error: there must not be a mine under the first opened tile", !(*game->_selected_tile & TILE_MINE));
+	minesweeper_open_tile(game, game->selected_tile);
+	mu_assert("Error: after opening the first tile, state should be: playing", game->state == MINESWEEPER_PLAYING);
+	mu_assert("Error: there must not be a mine under the first opened tile", !(*game->selected_tile & TILE_MINE));
 	return 0;
 }
 
 static char * test_open_mine() {
 	puts("Test: Open mine...");
 	minesweeper_set_cursor(game, 0, 0);
-	minesweeper_open_tile(game, game->_selected_tile);
-	mu_assert("Error: After opening a mine tile, state must be game_over.", game->_state == MINESWEEPER_GAME_OVER);
+	minesweeper_open_tile(game, game->selected_tile);
+	mu_assert("Error: After opening a mine tile, state must be game_over.", game->state == MINESWEEPER_GAME_OVER);
 	return 0;
 }
 
@@ -121,9 +121,9 @@ static char * test_win_state() {
 	/* Init the game with zero mines */
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, 0, 0);
-	minesweeper_open_tile(game, game->_selected_tile);
-	mu_assert("Error: when 0 mines exist, all tiles should be opened after the first tile is opened", game->_opened_tile_count == width * height);
-	mu_assert("Error: when all tiles are opened, state should be WIN", game->_state == MINESWEEPER_WIN);
+	minesweeper_open_tile(game, game->selected_tile);
+	mu_assert("Error: when 0 mines exist, all tiles should be opened after the first tile is opened", game->opened_tile_count == width * height);
+	mu_assert("Error: when all tiles are opened, state should be WIN", game->state == MINESWEEPER_WIN);
 	return 0;
 }
 
@@ -136,13 +136,13 @@ static char * test_callbacks() {
 	puts("Test: Changed tile callbacks...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
-	minesweeper_toggle_flag(game, game->_selected_tile);
+	minesweeper_toggle_flag(game, game->selected_tile);
 	mu_assert("Error: if no callback function is assigned, no callbacks should fire.", callback_count == 0);
-	game->on_tile_updated = &callback;
-	minesweeper_toggle_flag(game, game->_selected_tile);
+	game->tile_update_callback = &callback;
+	minesweeper_toggle_flag(game, game->selected_tile);
 	mu_assert("Error: if a callback function is assigned, a callback should fire when a flag is toggled.", callback_count == 1);
 	callback_count = 0;
-	minesweeper_open_tile(game, game->_selected_tile);
+	minesweeper_open_tile(game, game->selected_tile);
 	mu_assert("Error: when 0 mines exist, a change callback should be sent for every tile.", callback_count == width * height);
 	return 0;
 }
@@ -151,26 +151,26 @@ static char * test_flag_counts() {
 	puts("Test: Flag counts...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
-	minesweeper_toggle_flag(game, game->_selected_tile);
-	mu_assert("Error: after placing a flag, _flag_count should increase.", game->_flag_count == 1);
-	minesweeper_toggle_flag(game, game->_selected_tile);
-	mu_assert("Error: after toggling flag at the same tile, _flag_count should decrease.", game->_flag_count == 0);
-	minesweeper_open_tile(game, game->_selected_tile);
-	minesweeper_toggle_flag(game, game->_selected_tile);
-	mu_assert("Error: when attempting to toggle flag at an already opened tile, nothing should happen, and flag count should stay at 0.", game->_flag_count == 0);
+	minesweeper_toggle_flag(game, game->selected_tile);
+	mu_assert("Error: after placing a flag, _flag_count should increase.", game->flag_count == 1);
+	minesweeper_toggle_flag(game, game->selected_tile);
+	mu_assert("Error: after toggling flag at the same tile, _flag_count should decrease.", game->flag_count == 0);
+	minesweeper_open_tile(game, game->selected_tile);
+	minesweeper_toggle_flag(game, game->selected_tile);
+	mu_assert("Error: when attempting to toggle flag at an already opened tile, nothing should happen, and flag count should stay at 0.", game->flag_count == 0);
 	return 0;
 }
 
 static char * test_selected_tile() {
 	puts("Test: Selected tile...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
-	mu_assert("Error: Selected tile should be NULL after game init", game->_selected_tile == NULL);
-	minesweeper_toggle_flag(game, game->_selected_tile);
-	mu_assert("Error: Flag count should not change when toggling flag on empty cursor tile", game->_flag_count == 0);
+	mu_assert("Error: Selected tile should be NULL after game init", game->selected_tile == NULL);
+	minesweeper_toggle_flag(game, game->selected_tile);
+	mu_assert("Error: Flag count should not change when toggling flag on empty cursor tile", game->flag_count == 0);
 	minesweeper_set_cursor(game, 10, 10);
-	mu_assert("Error: Selected tile should be at (10, 10) after a call to set_cursor", game->_selected_tile == minesweeper_get_tile_at(game, 10, 10));
+	mu_assert("Error: Selected tile should be at (10, 10) after a call to set_cursor", game->selected_tile == minesweeper_get_tile_at(game, 10, 10));
 	minesweeper_set_cursor(game, 9999, 9999);
-	mu_assert("Error: Selected tile should be set to NULL when attempting to set cursor out of bounds", game->_selected_tile == NULL);
+	mu_assert("Error: Selected tile should be set to NULL when attempting to set cursor out of bounds", game->selected_tile == NULL);
 	return 0;
 }
 
@@ -181,13 +181,13 @@ static char * test_cursor_movement() {
 	minesweeper_move_cursor(game, RIGHT, false);
 	minesweeper_move_cursor(game, RIGHT, false);
 	minesweeper_move_cursor(game, DOWN, false);
-	mu_assert("Error: Selected tile should be at (12, 11) after cursor moving", game->_selected_tile == minesweeper_get_tile_at(game, 12, 11));
+	mu_assert("Error: Selected tile should be at (12, 11) after cursor moving", game->selected_tile == minesweeper_get_tile_at(game, 12, 11));
 	minesweeper_set_cursor(game, 0, 0);
 	minesweeper_move_cursor(game, LEFT, false);
-	mu_assert("Error: Cursor should not move outside of bounds if should_wrap is false", game->_selected_tile == minesweeper_get_tile_at(game, 0, 0));
+	mu_assert("Error: Cursor should not move outside of bounds if should_wrap is false", game->selected_tile == minesweeper_get_tile_at(game, 0, 0));
 	minesweeper_move_cursor(game, LEFT, true);
 	minesweeper_move_cursor(game, UP, true);
-	mu_assert("Error: Cursor should have wrapped to other side of the board if should_wrap is true", game->_selected_tile == minesweeper_get_tile_at(game, width - 1, height - 1));
+	mu_assert("Error: Cursor should have wrapped to other side of the board if should_wrap is true", game->selected_tile == minesweeper_get_tile_at(game, width - 1, height - 1));
 	return 0;
 }
 
