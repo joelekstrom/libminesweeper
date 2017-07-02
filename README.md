@@ -72,9 +72,11 @@ Check out the reference implementations for more examples on how to render a gam
 All available functions are documented in minesweeper.h.
 
 ## Testing
-Run `make test` to run the unit tests. It might be a good idea to run the tests
+Run `make run-c-tests` to run the unit tests. It might be a good idea to run the tests
 with your preferred compiler, to catch anything I might've missed. Please add an
 issue if any tests don't pass!
+
+Similarly, use `make run-cpp-tests` for C++, projects, or `make run-all-tests` for both.
 
 ## Reference implementations:
 - [Terminal Mines](https://github.com/accatyyc/terminal-mines) An ncurses frontend for running in terminals

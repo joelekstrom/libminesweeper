@@ -26,7 +26,7 @@ enum minesweeper_game_state {
 };
 
 struct minesweeper_game;
-typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile);
+typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile, void *user_info);
 
 /**
  * Contains data for a single minesweeper game.
@@ -46,6 +46,7 @@ struct minesweeper_game {
 	uint8_t *data;          /* Tile buffer */
 	enum minesweeper_game_state state;
 	minesweeper_callback tile_update_callback; /* Optional function pointer to receive tile state updates */
+	void *user_info; /* Can be used for anything, will be passed as a parameter to tile_update_callback */
 };
 
 /**

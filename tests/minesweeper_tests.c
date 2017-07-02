@@ -127,18 +127,20 @@ static char * test_win_state() {
 	return 0;
 }
 
-static unsigned callback_count = 0;
-void callback(struct minesweeper_game *game, uint8_t *tile) {
-	callback_count++;
+void callback(struct minesweeper_game *game, uint8_t *tile, void *user_info) {
+	int *callback_count = (int *)user_info;
+	*callback_count = *callback_count + 1;
 }
 
 static char * test_callbacks() {
+	int callback_count = 0;
 	puts("Test: Changed tile callbacks...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_toggle_flag(game, game->selected_tile);
 	mu_assert("Error: if no callback function is assigned, no callbacks should fire.", callback_count == 0);
 	game->tile_update_callback = &callback;
+	game->user_info = &callback_count;
 	minesweeper_toggle_flag(game, game->selected_tile);
 	mu_assert("Error: if a callback function is assigned, a callback should fire when a flag is toggled.", callback_count == 1);
 	callback_count = 0;

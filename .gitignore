@@ -1,4 +1,6 @@
 .DS_Store
 bin
 libminesweeper.a
-tests/test
+tests/c-tests
+tests/cpp-tests
+*.DSYM
