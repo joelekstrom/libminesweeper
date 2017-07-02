@@ -17,6 +17,7 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 	game->flag_count = 0;
 	game->opened_tile_count = 0;
 	game->selected_tile = NULL;
+	game->user_info = NULL;
 	memset(game->data, 0, width * height);
 	generate_mines(game, mine_density);
 	return game;
@@ -132,7 +133,7 @@ void generate_mines(struct minesweeper_game *game, float density) {
 
 void send_update_callback(struct minesweeper_game *game, uint8_t *tile) {
 	if (game->tile_update_callback != NULL) {
-		game->tile_update_callback(game, tile);
+		game->tile_update_callback(game, tile, game->user_info);
 	}
 }
 
