@@ -70,6 +70,21 @@ A tile has the following properties:
 - `has_mine`
 - `is_opened`
 
+### Handling callbacks
+
+You can register a callback handler to be informed by the library whenever a tile updates.
+This allows you to update your UI by only redrawing updated tiles. A `void *user_info` is
+passed to your update function (same pointer that you set to `game->user_info` which you can use
+to pass any data to the callback.
+
+```c
+void tile_updated(struct minesweeper_game *game, struct minesweeper_tile *tile, void *user_info) {
+	// Redraw tile in your UI
+}
+
+game->tile_update_callback = &tile_updated;
+```
+
 Check out the reference implementations for more examples on how to render a game.
 All available functions are documented in minesweeper.h.
 
@@ -88,6 +103,11 @@ game.moveCursor(RIGHT, false);
 auto tile = game.selectedTile();
 tile.open();
 bool hasMine = tile.hasMine();
+
+game.tileUpdateCallback = [](Minesweeper::Game& game, Minesweeper::Tile& tile) {
+	// Redraw tile in your UI
+};
+
 ```
 
 ## Testing
