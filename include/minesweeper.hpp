@@ -29,8 +29,8 @@ namespace Minesweeper {
 		}
 
 	private:
-		Tile(uint8_t *internal, minesweeper_game *game): internal(internal), game(game) {}
-		uint8_t *internal;
+		Tile(minesweeper_tile *internal, minesweeper_game *game): internal(internal), game(game) {}
+		minesweeper_tile *internal;
 		minesweeper_game *game;
 	};
 
@@ -55,7 +55,7 @@ namespace Minesweeper {
 		minesweeper_game *internal;
 	};
 
-	extern "C" void callbackHandler(minesweeper_game *game, uint8_t *tile, void *context) {
+	extern "C" void callbackHandler(minesweeper_game *game, struct minesweeper_tile *tile, void *context) {
 		Game *gameObject = (Game *)context;
 		unsigned x, y; minesweeper_get_tile_location(game, tile, &x, &y);
 		Tile tileObject = gameObject->tileAt(x, y);
@@ -106,14 +106,14 @@ namespace Minesweeper {
 	}
 
 	inline Tile Game::selectedTile() {
-		uint8_t *tilePtr = internal->selected_tile;
+		minesweeper_tile *tilePtr = internal->selected_tile;
 		if (tilePtr == NULL)
 			throw std::logic_error("No tile is selected. Call setCursor() first.");
 		return Tile(tilePtr, this->internal);
 	}
 
 	inline Tile Game::tileAt(unsigned x, unsigned y) {
-		uint8_t *tilePtr = minesweeper_get_tile_at(internal, x, y);
+		minesweeper_tile *tilePtr = minesweeper_get_tile_at(internal, x, y);
 		if (tilePtr == NULL)
 			throw std::out_of_range("Tile is out of bounds for this game.");
 		return Tile(tilePtr, this->internal);
@@ -128,7 +128,7 @@ namespace Minesweeper {
 	}
 
 	inline uint8_t Tile::adjacentMineCount() {
-		return minesweeper_get_adjacent_mine_count(internal);
+		return internal->adjacent_mine_count;
 	}
 
 	inline void Tile::toggleMine() {
@@ -136,24 +136,24 @@ namespace Minesweeper {
 	}
 
 	inline bool Tile::hasMine() {
-		return *internal & TILE_MINE;
+		return internal->has_mine;
 	}
 
 	inline bool Tile::hasFlag() {
-		return *internal & TILE_FLAG;
+		return internal->has_flag;
 	}
 
 	inline bool Tile::isOpened() {
-		return *internal & TILE_OPENED;
+		return internal->is_opened;
 	}
 
 	inline std::vector<Tile> Tile::adjacentTiles() {
-		uint8_t *tiles[8];
+		minesweeper_tile *tiles[8];
 		minesweeper_get_adjacent_tiles(game, internal, tiles);
 		std::vector<Tile> list;
 
 		for (int i = 0; i < 8; i++) {
-			uint8_t *tilePtr = tiles[i];
+			minesweeper_tile *tilePtr = tiles[i];
 			if (tilePtr != NULL) {
 				list.push_back(Tile(tilePtr, this->game));
 			}

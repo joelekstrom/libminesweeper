@@ -14,12 +14,12 @@ static char * test_init() {
 	puts("Test: Initialization...");
 	game_buffer = malloc(minesweeper_minimum_buffer_size(width, height));
 	game = minesweeper_init(width, height, 1.0, game_buffer);
-    mu_assert("Error: game data must be offset in the buffer.", game->data - sizeof(struct minesweeper_game) == (uint8_t *)game);
+    mu_assert("Error: tile data must be offset in the buffer.", (uint8_t *)game->tiles - sizeof(struct minesweeper_game) == (uint8_t *)game);
 	mu_assert("Error: after init, state must be pending_start", game->state == MINESWEEPER_PENDING_START);
    	return 0;
 }
 
-static int count_adjacent_tiles(uint8_t **adjacent_tiles) {
+static int count_adjacent_tiles(struct minesweeper_tile **adjacent_tiles) {
 	int i;
 	int count = 0;
 	for (i = 0; i < 8; i++) {
@@ -31,7 +31,7 @@ static int count_adjacent_tiles(uint8_t **adjacent_tiles) {
 }
 
 static char * test_get_tile() {
-	uint8_t *tile = minesweeper_get_tile_at(game, 10, 10);
+	struct minesweeper_tile *tile = minesweeper_get_tile_at(game, 10, 10);
 	puts("Test: Get tile...");
 	mu_assert("Error: the tile at (10, 10) should exist after init.", tile != NULL);
 
@@ -44,8 +44,8 @@ static char * test_get_tile() {
 }
 
 static char * test_get_adjacent_tiles() {
-	uint8_t *tile = minesweeper_get_tile_at(game, 0, 0);
-	uint8_t *adjacent_tiles[8];
+	struct minesweeper_tile *tile = minesweeper_get_tile_at(game, 0, 0);
+	struct minesweeper_tile *adjacent_tiles[8];
 	puts("Test: Get adjacent tiles...");
 	minesweeper_get_adjacent_tiles(game, tile, adjacent_tiles);
 	mu_assert("Error: the tile at (0, 0) should have 3 adjacent tiles.", count_adjacent_tiles(adjacent_tiles) == 3);
@@ -65,7 +65,7 @@ static char * test_open_first_tile() {
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_open_tile(game, game->selected_tile);
 	mu_assert("Error: after opening the first tile, state should be: playing", game->state == MINESWEEPER_PLAYING);
-	mu_assert("Error: there must not be a mine under the first opened tile", !(*game->selected_tile & TILE_MINE));
+	mu_assert("Error: there must not be a mine under the first opened tile", !(game->selected_tile->has_mine));
 	return 0;
 }
 
@@ -78,11 +78,10 @@ static char * test_open_mine() {
 }
 
 static char * test_adjacent_mine_counts() {
-	uint8_t *center_tile;
-	uint8_t *left_tile;
-	uint8_t *right_tile;
-	uint8_t *adj_tiles[8];
-	uint8_t mine_count;
+	struct minesweeper_tile *center_tile;
+	struct minesweeper_tile *left_tile;
+	struct minesweeper_tile *right_tile;
+	struct minesweeper_tile *adj_tiles[8];
 	int i;
 
 	puts("Test: Adjacent mine counters...");
@@ -94,8 +93,7 @@ static char * test_adjacent_mine_counts() {
 	minesweeper_toggle_mine(game, left_tile);
 	minesweeper_toggle_mine(game, right_tile);
 
-	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
-	mu_assert("Error: the tile at (10, 10) must have a mine_count of 2 after mines have been placed at (9, 10) and (11, 10).", mine_count == 2);
+	mu_assert("Error: the tile at (10, 10) must have a mine_count of 2 after mines have been placed at (9, 10) and (11, 10).", center_tile->adjacent_mine_count == 2);
 
 	// Toggle mines on all tiles adjacent to the center tile, except
 	// left and right tiles which already have mines
@@ -106,12 +104,10 @@ static char * test_adjacent_mine_counts() {
 		}
 	}
 
-	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
-	mu_assert("Error: the tile at (10, 10) must have a mine_count of 8 after mines have been placed at every tile around it.", mine_count == 8);
+	mu_assert("Error: the tile at (10, 10) must have a mine_count of 8 after mines have been placed at every tile around it.", center_tile->adjacent_mine_count == 8);
 
 	minesweeper_toggle_mine(game, left_tile);
-	mine_count = minesweeper_get_adjacent_mine_count(center_tile);
-	mu_assert("Error: the tile at (10, 10) must have a mine_count of 7 after the mine has been toggled off on the tile to the left of it.", mine_count == 7);
+	mu_assert("Error: the tile at (10, 10) must have a mine_count of 7 after the mine has been toggled off on the tile to the left of it.", center_tile->adjacent_mine_count == 7);
 
 	return 0;
 }
@@ -127,7 +123,7 @@ static char * test_win_state() {
 	return 0;
 }
 
-void callback(struct minesweeper_game *game, uint8_t *tile, void *user_info) {
+void callback(struct minesweeper_game *game, struct minesweeper_tile *tile, void *user_info) {
 	int *callback_count = (int *)user_info;
 	*callback_count = *callback_count + 1;
 }

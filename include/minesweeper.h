@@ -5,12 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-enum {
-	TILE_OPENED = 1,
-	TILE_MINE = 1 << 1,
-	TILE_FLAG = 1 << 2
-};
-
 enum direction {
 	LEFT,
 	RIGHT,
@@ -25,8 +19,15 @@ enum minesweeper_game_state {
 	MINESWEEPER_GAME_OVER
 };
 
+struct minesweeper_tile {
+	uint8_t adjacent_mine_count : 4;
+	bool has_flag : 1;
+	bool has_mine : 1;
+	bool is_opened : 1;
+};
+
 struct minesweeper_game;
-typedef void (*minesweeper_callback) (struct minesweeper_game *game, uint8_t *tile, void *user_info);
+typedef void (*minesweeper_callback) (struct minesweeper_game *game, struct minesweeper_tile *tile, void *user_info);
 
 /**
  * Contains data for a single minesweeper game.
@@ -42,8 +43,8 @@ struct minesweeper_game {
 	unsigned mine_count;
 	unsigned opened_tile_count;
 	unsigned flag_count;
-	uint8_t *selected_tile; /* Pointer to the tile under the cursor */
-	uint8_t *data;          /* Tile buffer */
+	struct minesweeper_tile *selected_tile; /* Pointer to the tile under the cursor */
+	struct minesweeper_tile *tiles;
 	enum minesweeper_game_state state;
 	minesweeper_callback tile_update_callback; /* Optional function pointer to receive tile state updates */
 	void *user_info; /* Can be used for anything, will be passed as a parameter to tile_update_callback */
@@ -87,44 +88,38 @@ void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direc
  * be opened instead, to imitate the quick-open functionality of most
  * minesweeper games.
  */
-void minesweeper_open_tile(struct minesweeper_game *game, uint8_t *tile);
+void minesweeper_open_tile(struct minesweeper_game *game, struct minesweeper_tile *tile);
 
 /**
  * Toggles a flag on an unopened tile.
  */
-void minesweeper_toggle_flag(struct minesweeper_game *game, uint8_t *tile);
+void minesweeper_toggle_flag(struct minesweeper_game *game, struct minesweeper_tile *tile);
 
 /**
  * Get pointer to tile at location. Returns NULL if location if out of bounds.
  */
-uint8_t *minesweeper_get_tile_at(struct minesweeper_game *game, unsigned x, unsigned y);
+struct minesweeper_tile *minesweeper_get_tile_at(struct minesweeper_game *game, unsigned x, unsigned y);
 
 /**
  * Get location of a tile.
  *
  * x/y: Pointers to integers which the result will be written to.
  */
-void minesweeper_get_tile_location(struct minesweeper_game *game, uint8_t *tile, unsigned *x, unsigned *y);
+void minesweeper_get_tile_location(struct minesweeper_game *game, struct minesweeper_tile *tile, unsigned *x, unsigned *y);
 
 /**
  * Get all tiles adjacent to tile. A tile can have at most 8 adjacent tiles,
  * but tiles adjacent to edges of the game area will have fewer.
  *
- * adjacent_tiles: A pointer to an array of 8 uint8_t pointers. The resulting tiles will
+ * adjacent_tiles: A pointer to an array of 8 tile pointers. Pointers to the resulting tiles will
  * be written to this array. Some tiles may be NULL, if tile is adjacent to an edge.
  */
-void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, uint8_t *tile, uint8_t *adjacent_tiles[8]);
-
-/**
- * Returns the number of adjacent mines for a tile. This is
- * the colored number that is shown on tiles in most minesweepers.
- */
-uint8_t minesweeper_get_adjacent_mine_count(uint8_t *tile);
+void minesweeper_get_adjacent_tiles(struct minesweeper_game *game, struct minesweeper_tile *tile, struct minesweeper_tile *adjacent_tiles[8]);
 
 /**
  * Toggles a mine on a tile, and adjusts the adjacent mine counts for all
  * adjacent tiles.
  */
-void minesweeper_toggle_mine(struct minesweeper_game *game, uint8_t *tile);
+void minesweeper_toggle_mine(struct minesweeper_game *game, struct minesweeper_tile *tile);
 
 #endif
