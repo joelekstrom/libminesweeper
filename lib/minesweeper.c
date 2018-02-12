@@ -18,7 +18,7 @@ struct minesweeper_game *minesweeper_init(unsigned width, unsigned height, float
 	game->opened_tile_count = 0;
 	game->selected_tile = NULL;
 	game->user_info = NULL;
-	memset(game->tiles, 0, width * height);
+	memset(game->tiles, 0, sizeof(struct minesweeper_tile) * width * height);
 	generate_mines(game, mine_density);
 	return game;
 }
