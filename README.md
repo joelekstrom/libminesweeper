@@ -53,7 +53,7 @@ Using the cursor functionality is no requirement. It exists to help handling com
 movement logic for keypress-based sweeping. It's also possible to modify tiles directly,
 if for example making a mouse based sweeper:
 ```c
-uint8_t *tile = minesweeper_get_tile_at(game, x, y);
+struct minesweeper_tile *tile = minesweeper_get_tile_at(game, x, y);
 minesweeper_open_tile(game, tile);
 ```
 
