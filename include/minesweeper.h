@@ -91,6 +91,11 @@ void minesweeper_move_cursor(struct minesweeper_game *game, enum direction direc
 void minesweeper_open_tile(struct minesweeper_game *game, struct minesweeper_tile *tile);
 
 /**
+ * Open souraounding tiles if tile is opened, else a flag is placed
+ */
+void minesweeper_space_tile(struct minesweeper_game *game, struct minesweeper_tile *tile);
+
+/**
  * Toggles a flag on an unopened tile.
  */
 void minesweeper_toggle_flag(struct minesweeper_game *game, struct minesweeper_tile *tile);

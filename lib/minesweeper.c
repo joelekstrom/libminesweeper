@@ -185,6 +185,23 @@ void minesweeper_open_tile(struct minesweeper_game *game, struct minesweeper_til
 	_open_tile(game, tile, true);
 }
 
+void minesweeper_space_tile(struct minesweeper_game *game, struct minesweeper_tile *tile) {
+	if (game->state == MINESWEEPER_PENDING_START) {
+		game->state = MINESWEEPER_PLAYING;
+
+		// Delete any potential mine on the first opened tile
+		if (tile->has_mine) {
+			minesweeper_toggle_mine(game, tile);
+		}
+	}
+
+	if (tile->is_opened) {
+		_open_tile(game, tile, true);
+	} else {
+		minesweeper_toggle_flag(game, tile);
+	}
+}
+
 void open_line_segments(struct minesweeper_game *game, unsigned x1, unsigned x2, unsigned y) {
 	unsigned x;
 	struct minesweeper_tile *tile;
