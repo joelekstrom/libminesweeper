@@ -17,6 +17,7 @@ namespace Minesweeper {
 	public:
 		void open();
 		void toggleFlag();
+		void spaceTile();
 		void toggleMine();
 		uint8_t adjacentMineCount();
 		bool hasFlag();
@@ -125,6 +126,10 @@ namespace Minesweeper {
 
 	inline void Tile::toggleFlag() {
 		minesweeper_toggle_flag(game, internal);
+	}
+
+	inline void Tile::spaceTile() {
+		minesweeper_space_tile(game, internal);
 	}
 
 	inline uint8_t Tile::adjacentMineCount() {
