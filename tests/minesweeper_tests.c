@@ -189,6 +189,36 @@ static char * test_cursor_movement() {
 	return 0;
 }
 
+static char * test_space_flag_tile() {
+	puts("Test: space flagged tile..");
+	game = minesweeper_init(width, height, 0.0, game_buffer);
+	minesweeper_set_cursor(game, width / 2, height / 2);
+	minesweeper_space_tile(game,game->selected_tile);
+
+	mu_assert("Error: unopened tile should get flagged by space.", game->selected_tile->has_flag);
+}
+
+static char * test_space_open_tile() {
+	puts("Test: space opened tile..");
+	game = minesweeper_init(width, height, 0.0, game_buffer);
+
+	struct minesweeper_tile *zero_tile = minesweeper_get_tile_at(game, 0, 0);
+	struct minesweeper_tile *one_tile = minesweeper_get_tile_at(game, 0, 1);
+
+	minesweeper_toggle_mine(game, zero_tile);
+	minesweeper_set_cursor(game, 0, 1);
+	minesweeper_open_tile(game, game->selected_tile);
+	minesweeper_set_cursor(game, 0, 0);
+	minesweeper_toggle_flag(game, game->selected_tile);
+	minesweeper_set_cursor(game, 0, 1);
+	minesweeper_space_tile(game, game->selected_tile);
+	minesweeper_set_cursor(game, width-1, height-1);
+
+	mu_assert("Error: all tiles should get opened by space.", game->selected_tile->is_opened);
+
+    return 0;
+}
+
 static char * all_tests() {
 	mu_run_test(test_init);
 	mu_run_test(test_get_tile);
@@ -201,6 +231,8 @@ static char * all_tests() {
 	mu_run_test(test_flag_counts);
 	mu_run_test(test_selected_tile);
 	mu_run_test(test_cursor_movement);
+	mu_run_test(test_space_flag_tile);
+	mu_run_test(test_space_open_tile);
 	return 0;
 }
  
@@ -215,3 +247,4 @@ int main(int argc, char **argv) {
 	printf("Tests run: %d\n", tests_run);
 	return 0;
 }
+
