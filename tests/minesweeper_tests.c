@@ -10,11 +10,11 @@ int height = 100;
 uint8_t *game_buffer = NULL;
 struct minesweeper_game *game = NULL;
 
-static char * test_init() {
+static char * test_init(void) {
 	puts("Test: Initialization...");
 	game_buffer = malloc(minesweeper_minimum_buffer_size(width, height));
 	game = minesweeper_init(width, height, 1.0, game_buffer);
-    mu_assert("Error: tile data must be offset in the buffer.", (uint8_t *)game->tiles - sizeof(struct minesweeper_game) == (uint8_t *)game);
+	mu_assert("Error: tile data must be offset in the buffer.", (uint8_t *)game->tiles - sizeof(struct minesweeper_game) == (uint8_t *)game);
 	mu_assert("Error: after init, state must be pending_start", game->state == MINESWEEPER_PENDING_START);
    	return 0;
 }
@@ -30,7 +30,7 @@ static int count_adjacent_tiles(struct minesweeper_tile **adjacent_tiles) {
 	return count;
 }
 
-static char * test_get_tile() {
+static char * test_get_tile(void) {
 	struct minesweeper_tile *tile = minesweeper_get_tile_at(game, 10, 10);
 	puts("Test: Get tile...");
 	mu_assert("Error: the tile at (10, 10) should exist after init.", tile != NULL);
@@ -43,7 +43,7 @@ static char * test_get_tile() {
 	return 0;
 }
 
-static char * test_get_adjacent_tiles() {
+static char * test_get_adjacent_tiles(void) {
 	struct minesweeper_tile *tile = minesweeper_get_tile_at(game, 0, 0);
 	struct minesweeper_tile *adjacent_tiles[8];
 	puts("Test: Get adjacent tiles...");
@@ -60,7 +60,7 @@ static char * test_get_adjacent_tiles() {
 	return 0;
 }
 
-static char * test_open_first_tile() {
+static char * test_open_first_tile(void) {
 	puts("Test: Open first tile...");
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_open_tile(game, game->selected_tile);
@@ -69,7 +69,7 @@ static char * test_open_first_tile() {
 	return 0;
 }
 
-static char * test_open_mine() {
+static char * test_open_mine(void) {
 	puts("Test: Open mine...");
 	minesweeper_set_cursor(game, 0, 0);
 	minesweeper_open_tile(game, game->selected_tile);
@@ -77,7 +77,7 @@ static char * test_open_mine() {
 	return 0;
 }
 
-static char * test_adjacent_mine_counts() {
+static char * test_adjacent_mine_counts(void) {
 	struct minesweeper_tile *center_tile;
 	struct minesweeper_tile *left_tile;
 	struct minesweeper_tile *right_tile;
@@ -112,23 +112,27 @@ static char * test_adjacent_mine_counts() {
 	return 0;
 }
 
-static char * test_win_state() {
+static char * test_win_state(void) {
 	puts("Test: 0 mines/Win state...");
 	/* Init the game with zero mines */
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, 0, 0);
 	minesweeper_open_tile(game, game->selected_tile);
-	mu_assert("Error: when 0 mines exist, all tiles should be opened after the first tile is opened", game->opened_tile_count == width * height);
+	mu_assert("Error: when 0 mines exist, all tiles should be opened after the first tile is opened", game->opened_tile_count == (unsigned)(width * height));
 	mu_assert("Error: when all tiles are opened, state should be WIN", game->state == MINESWEEPER_WIN);
 	return 0;
 }
 
+#define UNUSED(x) (void)(x)
+
 void callback(struct minesweeper_game *game, struct minesweeper_tile *tile, void *user_info) {
+	UNUSED(game);
+	UNUSED(tile);
 	int *callback_count = (int *)user_info;
 	*callback_count = *callback_count + 1;
 }
 
-static char * test_callbacks() {
+static char * test_callbacks(void) {
 	int callback_count = 0;
 	puts("Test: Changed tile callbacks...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
@@ -145,7 +149,7 @@ static char * test_callbacks() {
 	return 0;
 }
 
-static char * test_flag_counts() {
+static char * test_flag_counts(void) {
 	puts("Test: Flag counts...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
@@ -159,7 +163,7 @@ static char * test_flag_counts() {
 	return 0;
 }
 
-static char * test_selected_tile() {
+static char * test_selected_tile(void) {
 	puts("Test: Selected tile...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	mu_assert("Error: Selected tile should be NULL after game init", game->selected_tile == NULL);
@@ -172,7 +176,7 @@ static char * test_selected_tile() {
 	return 0;
 }
 
-static char * test_cursor_movement() {
+static char * test_cursor_movement(void) {
 	puts("Test: Cursor movement...");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, 10, 10);
@@ -189,21 +193,21 @@ static char * test_cursor_movement() {
 	return 0;
 }
 
-static char * test_space_flag_tile() {
+static char * test_space_flag_tile(void) {
 	puts("Test: space flagged tile..");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 	minesweeper_set_cursor(game, width / 2, height / 2);
 	minesweeper_space_tile(game,game->selected_tile);
 
 	mu_assert("Error: unopened tile should get flagged by space.", game->selected_tile->has_flag);
+	return 0;
 }
 
-static char * test_space_open_tile() {
+static char * test_space_open_tile(void) {
 	puts("Test: space opened tile..");
 	game = minesweeper_init(width, height, 0.0, game_buffer);
 
 	struct minesweeper_tile *zero_tile = minesweeper_get_tile_at(game, 0, 0);
-	struct minesweeper_tile *one_tile = minesweeper_get_tile_at(game, 0, 1);
 
 	minesweeper_toggle_mine(game, zero_tile);
 	minesweeper_set_cursor(game, 0, 1);
@@ -216,10 +220,10 @@ static char * test_space_open_tile() {
 
 	mu_assert("Error: all tiles should get opened by space.", game->selected_tile->is_opened);
 
-    return 0;
+	return 0;
 }
 
-static char * all_tests() {
+static char * all_tests(void) {
 	mu_run_test(test_init);
 	mu_run_test(test_get_tile);
 	mu_run_test(test_get_adjacent_tiles);
@@ -245,6 +249,6 @@ int main(int argc, char **argv) {
 		printf("ALL TESTS PASSED\n");
 	}
 	printf("Tests run: %d\n", tests_run);
-	return 0;
+	return result == 0 ? 0 : 1;
 }
 

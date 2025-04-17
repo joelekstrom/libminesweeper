@@ -10,15 +10,15 @@
 #include <iostream>
 
 int tests_run = 0;
-int width = 120;
-int height = 100;
+unsigned int width = 120;
+unsigned int height = 100;
 
 static char * test_init() {
 	puts("Test: Initialization...");
 	Minesweeper::Game game = Minesweeper::Game(width, height, 1.0);
 	assertTrue("Error: after init, state must be pending_start", game.state() == MINESWEEPER_PENDING_START);
 	assertTrue("Error: after init, width and height must be returned correctly", game.width() == width && game.height() == height);
-   	return 0;
+	return 0;
 }
 
 static char * test_get_tile() {
@@ -109,8 +109,8 @@ static char * test_win_state() {
 static char * test_callbacks() {
 	puts("Test: Changed tile callbacks...");
 	Minesweeper::Game game = Minesweeper::Game(width, height, 0.0);
-	int callbackCount = 0;
-	game.tileUpdateCallback = [&callbackCount](Minesweeper::Game& game, Minesweeper::Tile& tile) { callbackCount++; };
+	unsigned int callbackCount = 0;
+	game.tileUpdateCallback = [&callbackCount](Minesweeper::Game&, Minesweeper::Tile&) { callbackCount++; };
 	game.setCursor(width / 2, height / 2);
 	game.selectedTile().toggleFlag();
 	assertTrue("Error: if a callback function is assigned, a callback should fire when a flag is toggled.", callbackCount == 1);
@@ -169,6 +169,7 @@ static char * test_space_flag_tile() {
 	game.selectedTile().spaceTile();
 
 	assertTrue("Error: unopened tile should get flagged by space.", game.selectedTile().hasFlag());
+	return 0;
 }
 
 static char * test_space_open_tile() {
@@ -177,7 +178,6 @@ static char * test_space_open_tile() {
 
 
 	Minesweeper::Tile zero_tile = game.tileAt(0, 0);
-	Minesweeper::Tile one_tile = game.tileAt(0, 1);
 
 	zero_tile.toggleMine();
 	game.setCursor(0,1);
@@ -189,7 +189,7 @@ static char * test_space_open_tile() {
 	game.setCursor(game.width() -1, game.height() -1 );
 	assertTrue("Error: all tiles should get opened by space.", game.selectedTile().isOpened());
 
-    return 0;
+  return 0;
 }
 
 
@@ -210,7 +210,7 @@ static char * all_tests() {
 	return 0;
 }
  
-int main(int argc, char **argv) {
+int main() {
 	puts("Running C++ tests...");
 	const char *result = all_tests();
 	if (result != 0) {
@@ -220,5 +220,5 @@ int main(int argc, char **argv) {
 		puts("ALL TESTS PASSED");
 	}
 	printf("Tests run: %d\n", tests_run);
-	return 0;
+	return result == 0 ? 0 : 1;
 }

@@ -1,5 +1,5 @@
-C_FLAGS = --std=c99 -Wall -pedantic
-CXX_FLAGS = --std=c++14 -Wall -pedantic
+C_FLAGS = --std=c99 -Wall -pedantic -Wextra
+CXX_FLAGS = --std=c++14 -Wall -pedantic -Wextra
 
 library = libminesweeper.a
 
