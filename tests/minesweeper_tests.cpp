@@ -162,6 +162,37 @@ static char * test_cursor_movement() {
 	return 0;
 }
 
+static char * test_space_flag_tile() {
+	puts("Test: space flagged tile..");
+	Minesweeper::Game game = Minesweeper::Game(width, height, 0.0);
+	game.setCursor(width / 2, height / 2);
+	game.selectedTile().spaceTile();
+
+	assertTrue("Error: unopened tile should get flagged by space.", game.selectedTile().hasFlag());
+}
+
+static char * test_space_open_tile() {
+	puts("Test: space opened tile..");
+	Minesweeper::Game game = Minesweeper::Game(width, height, 0.0);
+
+
+	Minesweeper::Tile zero_tile = game.tileAt(0, 0);
+	Minesweeper::Tile one_tile = game.tileAt(0, 1);
+
+	zero_tile.toggleMine();
+	game.setCursor(0,1);
+	game.selectedTile().open();
+	game.setCursor(0,0);
+	game.selectedTile().toggleFlag();
+	game.setCursor(0,1);
+	game.selectedTile().spaceTile();
+	game.setCursor(game.width() -1, game.height() -1 );
+	assertTrue("Error: all tiles should get opened by space.", game.selectedTile().isOpened());
+
+    return 0;
+}
+
+
 static char * all_tests() {
 	mu_run_test(test_init);
 	mu_run_test(test_get_tile);
@@ -174,6 +205,8 @@ static char * all_tests() {
 	mu_run_test(test_flag_counts);
 	mu_run_test(test_selected_tile);
 	mu_run_test(test_cursor_movement);
+	mu_run_test(test_space_flag_tile);
+	mu_run_test(test_space_open_tile);
 	return 0;
 }
  
