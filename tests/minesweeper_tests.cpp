@@ -13,6 +13,8 @@ int tests_run = 0;
 unsigned int width = 120;
 unsigned int height = 100;
 
+static void mu_setup() {}
+
 static char * test_init() {
 	puts("Test: Initialization...");
 	Minesweeper::Game game = Minesweeper::Game(width, height, 1.0);
@@ -62,7 +64,10 @@ static char * test_open_mine() {
 	Minesweeper::Game game = Minesweeper::Game(width, height, 1.0);
 	game.setCursor(0, 0);
 	game.selectedTile().open();
-	game.setCursor(0, 1);
+	game.setCursor(0, 10);
+	if (!game.selectedTile().hasMine()) {
+		game.selectedTile().toggleMine();
+	}
 	game.selectedTile().open();
 	assertTrue("Error: After opening a mine tile, state must be game_over.", game.state() == MINESWEEPER_GAME_OVER);
 	return 0;

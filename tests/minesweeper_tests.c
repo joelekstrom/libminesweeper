@@ -10,13 +10,16 @@ int height = 100;
 uint8_t *game_buffer = NULL;
 struct minesweeper_game *game = NULL;
 
-static char * test_init(void) {
-	puts("Test: Initialization...");
+static void mu_setup(void) {
 	game_buffer = malloc(minesweeper_minimum_buffer_size(width, height));
 	game = minesweeper_init(width, height, 1.0, game_buffer);
+}
+
+static char * test_init(void) {
+	puts("Test: Initialization...");
 	mu_assert("Error: tile data must be offset in the buffer.", (uint8_t *)game->tiles - sizeof(struct minesweeper_game) == (uint8_t *)game);
 	mu_assert("Error: after init, state must be pending_start", game->state == MINESWEEPER_PENDING_START);
-   	return 0;
+	return 0;
 }
 
 static int count_adjacent_tiles(struct minesweeper_tile **adjacent_tiles) {
@@ -72,6 +75,11 @@ static char * test_open_first_tile(void) {
 static char * test_open_mine(void) {
 	puts("Test: Open mine...");
 	minesweeper_set_cursor(game, 0, 0);
+	minesweeper_open_tile(game, game->selected_tile);
+	minesweeper_set_cursor(game, 0, 10);
+	if (!game->selected_tile->has_mine) {
+		minesweeper_toggle_mine(game, game->selected_tile);
+	}
 	minesweeper_open_tile(game, game->selected_tile);
 	mu_assert("Error: After opening a mine tile, state must be game_over.", game->state == MINESWEEPER_GAME_OVER);
 	return 0;
@@ -219,7 +227,6 @@ static char * test_space_open_tile(void) {
 	minesweeper_set_cursor(game, width-1, height-1);
 
 	mu_assert("Error: all tiles should get opened by space.", game->selected_tile->is_opened);
-
 	return 0;
 }
 
@@ -240,7 +247,7 @@ static char * all_tests(void) {
 	return 0;
 }
  
-int main(int argc, char **argv) {
+int main(void) {
 	char *result = all_tests();
 	if (result != 0) {
 		printf("%s\n", result);

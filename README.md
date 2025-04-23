@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/joelekstrom/libminesweeper.svg?branch=master)](https://travis-ci.org/accatyyc/libminesweeper)
 # libminesweeper 
 A library for handling Minesweeper game logic, that can run on embedded hardware.
 Its goals are to be as efficient as possible memory- and processing power wise. It's written
